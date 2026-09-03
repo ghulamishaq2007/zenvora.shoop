@@ -41,8 +41,21 @@ document.addEventListener('DOMContentLoaded', () => {
   const navMenu = document.getElementById('nav-menu');
   const navbar = document.querySelector('.navbar');
 
+  const updateNavPosition = () => {
+    if (navbar) {
+      const rect = navbar.getBoundingClientRect();
+      const bottom = Math.max(0, Math.round(rect.bottom));
+      document.documentElement.style.setProperty('--nav-bottom', `${bottom}px`);
+    }
+  };
+
+  updateNavPosition();
+  window.addEventListener('resize', updateNavPosition, { passive: true });
+  window.addEventListener('scroll', updateNavPosition, { passive: true });
+
   if (hamburger && navMenu) {
     hamburger.addEventListener('click', () => {
+      updateNavPosition();
       const isOpen = hamburger.classList.toggle('active');
       navMenu.classList.toggle('active', isOpen);
       hamburger.setAttribute('aria-expanded', String(isOpen));

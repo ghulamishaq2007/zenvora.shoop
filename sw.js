@@ -1,11 +1,11 @@
-const CACHE_NAME = 'zenvora-shoop-v3';
+const CACHE_NAME = 'zenvora-shoop-v5';
 const APP_SHELL = [
   '/',
   '/index.html',
-  '/style.css?v=20260903b',
-  '/script.js?v=20260903b',
-  '/cart.js?v=20260903b',
-  '/app-install-v2.js?v=20260903b',
+  '/style.css?v=20260903d',
+  '/script.js?v=20260903d',
+  '/cart.js?v=20260903d',
+  '/app-install-v2.js?v=20260903d',
   '/icon-192.png',
   '/icon-512.png',
   '/manifest.webmanifest'

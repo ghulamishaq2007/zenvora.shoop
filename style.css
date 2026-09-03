@@ -157,7 +157,7 @@ button {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   letter-spacing: 0.03em;
   position: relative;
-  z-index: 1001;
+  z-index: 999;
 }
 
 .top-bar-content {
@@ -240,6 +240,51 @@ button {
   font-size: 0.95rem;
   line-height: 1;
   font-weight: 800;
+}
+
+/* WhatsApp Item & Button in Top Bar */
+.top-bar-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.top-bar-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #d1d5db;
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.top-bar-wa-icon {
+  font-size: 0.9rem;
+  line-height: 1;
+  display: inline-block;
+}
+
+.top-bar-wa-label {
+  color: #d1d5db;
+}
+
+.top-bar-wa-number {
+  color: var(--accent, #d4af37);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.top-bar-wa-btn:hover .top-bar-wa-number {
+  text-decoration: underline;
+  color: #ffffff;
+}
+
+/* Social links in Top Bar */
+.top-social-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-left: 0.5rem;
 }
 
 .top-social-link {
@@ -1893,31 +1938,61 @@ textarea.form-control {
 
 @media (max-width: 768px) {
   .top-bar {
-    padding: 0.4rem 0;
+    padding: 0.35rem 0;
+    overflow-x: hidden;
   }
 
+  .top-bar .container,
   .top-bar-content {
-    justify-content: center;
-    gap: 0.35rem 0.75rem;
-    text-align: center;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+    margin: 0 auto !important;
+    text-align: center !important;
   }
 
-  .top-bar-left {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.65rem 1rem;
-    width: 100%;
-    flex-wrap: wrap;
+  /* Hide delivery notices, WhatsApp Orders, and social links in top bar on mobile */
+  .top-bar-left,
+  .top-bar-whatsapp,
+  .top-bar-right > .top-bar-item,
+  .top-bar-wa-btn,
+  .top-social-wrap,
+  .top-bar-right > div[style*="margin-left"] {
+    display: none !important;
   }
-  
+
   .top-bar-right {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.65rem 1rem;
-    width: 100%;
-    flex-wrap: wrap;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  #download-app-btn,
+  .download-app-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.35rem !important;
+    font-size: 0.76rem !important;
+    padding: 0.28rem 0.85rem !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    border-radius: 999px !important;
+    line-height: 1.2 !important;
+    border: 1px solid rgba(212, 175, 55, 0.6) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #ffffff !important;
+    box-sizing: border-box !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    margin: 0 auto !important;
   }
 
   .hamburger {
@@ -1930,18 +2005,19 @@ textarea.form-control {
 
   .nav-menu {
     position: fixed;
-    top: 66px;
+    top: var(--nav-bottom, 62px);
     left: -100%;
     width: 100%;
-    height: calc(100vh - 66px);
+    height: calc(100dvh - var(--nav-bottom, 62px));
     background: #ffffff;
     flex-direction: column;
     align-items: flex-start;
-    padding: 2rem 1.5rem;
-    gap: 1.5rem;
-    transition: 0.3s ease-in-out;
+    padding: 1.5rem 1.25rem 2rem;
+    gap: 1.25rem;
+    transition: left 0.3s ease-in-out;
     box-shadow: var(--shadow-xl);
     overflow-y: auto;
+    z-index: 9999;
   }
 
   .nav-menu.active {
@@ -2156,23 +2232,53 @@ textarea.form-control {
 @keyframes zenvoraAppIn { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
 @media (max-width: 768px) {
   .top-bar-right {
-    gap: 0.5rem 0.85rem;
+    gap: 0;
     justify-content: center;
   }
   .download-app-link,
   #download-app-btn {
-    font-size: 0.72rem;
-    padding: 0.2rem 0.6rem;
+    font-size: 0.76rem !important;
+    padding: 0.28rem 0.85rem !important;
+    margin: 0 auto !important;
   }
 }
 @media (max-width: 480px) {
+  .top-bar {
+    padding: 0.35rem 0;
+  }
   .top-bar-right {
-    gap: 0.35rem 0.65rem;
+    gap: 0;
   }
   .download-app-link,
   #download-app-btn {
-    font-size: 0.68rem;
-    padding: 0.18rem 0.5rem;
+    font-size: 0.74rem !important;
+    padding: 0.26rem 0.8rem !important;
+    margin: 0 auto !important;
+  }
+}
+@media (max-width: 360px) {
+  .download-app-link,
+  #download-app-btn {
+    font-size: 0.7rem !important;
+    padding: 0.24rem 0.7rem !important;
+    gap: 0.25rem !important;
+    margin: 0 auto !important;
+  }
+}
+@media (max-width: 330px) {
+  .top-bar {
+    padding: 0.3rem 0;
+  }
+  .top-bar .container {
+    padding-left: 0.3rem !important;
+    padding-right: 0.3rem !important;
+  }
+  .download-app-link,
+  #download-app-btn {
+    font-size: 0.68rem !important;
+    padding: 0.22rem 0.6rem !important;
+    gap: 0.2rem !important;
+    margin: 0 auto !important;
   }
 }
 @media (min-width: 769px) {
