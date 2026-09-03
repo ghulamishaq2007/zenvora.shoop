@@ -92,8 +92,19 @@
   document.addEventListener('DOMContentLoaded', function () {
     registerSW();
 
-    document.querySelectorAll('#download-app-btn').forEach(function (button) {
-      button.addEventListener('click', showPrompt);
+    document.querySelectorAll('#download-app-btn, .download-app-link').forEach(function (button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault();
+        showPrompt();
+      });
+    });
+
+    document.addEventListener('click', function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest('#download-app-btn, .download-app-link') : null;
+      if (btn) {
+        e.preventDefault();
+        showPrompt();
+      }
     });
 
     if (!isStandalone()) {
