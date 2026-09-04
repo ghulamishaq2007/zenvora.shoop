@@ -141,6 +141,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Testimonials Slider ---
   initTestimonialsSlider();
+
+  // --- FAQ Accordion ---
+  initFaqAccordion();
 });
 
 // Category filtering logic
@@ -592,4 +595,69 @@ function initTestimonialsSlider() {
   updateControls();
   window.addEventListener('resize', updateControls, { passive: true });
 }
+
+// FAQ Accordion functionality
+function initFaqAccordion() {
+  const accordion = document.getElementById('faq-accordion');
+  if (!accordion) return;
+
+  const items = accordion.querySelectorAll('.faq-item');
+  if (!items.length) return;
+
+  items.forEach((item) => {
+    const btn = item.querySelector('.faq-question');
+    const answer = item.querySelector('.faq-answer');
+    const icon = item.querySelector('.faq-icon');
+
+    if (!btn || !answer) return;
+
+    btn.addEventListener('click', () => {
+      const isCurrentlyActive = item.classList.contains('active');
+
+      // Close all other items (only one open at a time)
+      items.forEach((otherItem) => {
+        if (otherItem !== item && otherItem.classList.contains('active')) {
+          const otherBtn = otherItem.querySelector('.faq-question');
+          const otherAns = otherItem.querySelector('.faq-answer');
+          const otherIcon = otherItem.querySelector('.faq-icon');
+
+          otherItem.classList.remove('active');
+          if (otherBtn) otherBtn.setAttribute('aria-expanded', 'false');
+          if (otherAns) {
+            otherAns.style.maxHeight = '0px';
+            otherAns.style.opacity = '0';
+          }
+          if (otherIcon) otherIcon.textContent = '+';
+        }
+      });
+
+      // Toggle current item
+      if (isCurrentlyActive) {
+        item.classList.remove('active');
+        btn.setAttribute('aria-expanded', 'false');
+        answer.style.maxHeight = '0px';
+        answer.style.opacity = '0';
+        if (icon) icon.textContent = '+';
+      } else {
+        item.classList.add('active');
+        btn.setAttribute('aria-expanded', 'true');
+        answer.style.maxHeight = answer.scrollHeight + 'px';
+        answer.style.opacity = '1';
+        if (icon) icon.textContent = '−';
+      }
+    });
+  });
+
+  // Responsive: dynamically adjust maxHeight on window resize if an item is active
+  window.addEventListener('resize', () => {
+    const activeItem = accordion.querySelector('.faq-item.active');
+    if (activeItem) {
+      const activeAns = activeItem.querySelector('.faq-answer');
+      if (activeAns) {
+        activeAns.style.maxHeight = activeAns.scrollHeight + 'px';
+      }
+    }
+  }, { passive: true });
+}
+
 
