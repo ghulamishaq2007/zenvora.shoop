@@ -35,43 +35,91 @@ function showToast(message, type = 'success') {
   }, 3500);
 }
 
-// --- Mobile Hamburger Menu & Sticky Header ---
+// --- Mobile Hamburger Menu & Drawer ---
 document.addEventListener('DOMContentLoaded', () => {
   const hamburger = document.getElementById('hamburger-btn');
   const navMenu = document.getElementById('nav-menu');
   const navbar = document.querySelector('.navbar');
 
-  const updateNavPosition = () => {
-    if (navbar) {
-      const rect = navbar.getBoundingClientRect();
-      const bottom = Math.max(0, Math.round(rect.bottom));
-      document.documentElement.style.setProperty('--nav-bottom', `${bottom}px`);
-    }
-  };
-
-  updateNavPosition();
-  window.addEventListener('resize', updateNavPosition, { passive: true });
-  window.addEventListener('scroll', updateNavPosition, { passive: true });
-
   if (hamburger && navMenu) {
-    hamburger.addEventListener('click', () => {
-      updateNavPosition();
-      const isOpen = hamburger.classList.toggle('active');
-      navMenu.classList.toggle('active', isOpen);
-      hamburger.setAttribute('aria-expanded', String(isOpen));
-      hamburger.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    // Ensure .mobile-nav-header with close button exists
+    if (!navMenu.querySelector('.mobile-nav-header')) {
+      const headerLi = document.createElement('li');
+      headerLi.className = 'mobile-nav-header';
+      headerLi.innerHTML = `
+        <span class="mobile-nav-title">ZENVORA <span>SHOOP</span></span>
+        <button type="button" class="mobile-nav-close" id="mobile-nav-close" aria-label="Close navigation menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      `;
+      navMenu.insertBefore(headerLi, navMenu.firstChild);
+    }
+
+    const openMenu = () => {
+      hamburger.classList.add('active');
+      navMenu.classList.add('active');
+      document.body.classList.add('menu-open');
+      hamburger.setAttribute('aria-expanded', 'true');
+      hamburger.setAttribute('aria-label', 'Close navigation menu');
+    };
+
+    const closeMenu = () => {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+      document.body.classList.remove('menu-open');
+      hamburger.setAttribute('aria-expanded', 'false');
+      hamburger.setAttribute('aria-label', 'Open navigation menu');
+    };
+
+    hamburger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (navMenu.classList.contains('active')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Close button (X) inside top-right of mobile menu
+    navMenu.addEventListener('click', (e) => {
+      const closeBtn = e.target.closest('.mobile-nav-close');
+      if (closeBtn) {
+        e.stopPropagation();
+        closeMenu();
+      }
     });
 
     // Close menu when clicking nav links
     const navLinks = navMenu.querySelectorAll('.nav-link');
     navLinks.forEach(link => {
       link.addEventListener('click', () => {
-        hamburger.classList.remove('active');
-        navMenu.classList.remove('active');
-        hamburger.setAttribute('aria-expanded', 'false');
-        hamburger.setAttribute('aria-label', 'Open navigation menu');
+        closeMenu();
       });
     });
+
+    // Close when clicking outside menu
+    document.addEventListener('click', (e) => {
+      if (navMenu.classList.contains('active') && !navMenu.contains(e.target) && !hamburger.contains(e.target)) {
+        closeMenu();
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+        closeMenu();
+      }
+    });
+
+    // Close menu if window is resized above mobile breakpoint (768px)
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+        closeMenu();
+      }
+    }, { passive: true });
   }
 
   // Sticky Navbar shadow on scroll
@@ -90,6 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Product Quick Add Buttons on Grid ---
   initQuickAddButtons();
+
+  // --- Testimonials Slider ---
+  initTestimonialsSlider();
 });
 
 // Category filtering logic
@@ -453,3 +504,92 @@ function initProductDetailPage(config) {
     });
   });
 }
+
+// 10. Testimonials Slider
+function initTestimonialsSlider() {
+  const track = document.getElementById('testimonials-track');
+  const prevBtn = document.getElementById('testimonial-prev-btn');
+  const nextBtn = document.getElementById('testimonial-next-btn');
+  const dotsContainer = document.getElementById('testimonial-dots');
+
+  if (!track) return;
+
+  const cards = track.querySelectorAll('.testimonial-card');
+  if (!cards.length) return;
+
+  // Build pagination dots
+  if (dotsContainer) {
+    dotsContainer.innerHTML = '';
+    cards.forEach((_, idx) => {
+      const dot = document.createElement('button');
+      dot.className = `testimonial-dot ${idx === 0 ? 'active' : ''}`;
+      dot.setAttribute('type', 'button');
+      dot.setAttribute('aria-label', `Go to testimonial ${idx + 1}`);
+      dot.addEventListener('click', () => {
+        const targetCard = cards[idx];
+        if (targetCard) {
+          track.scrollTo({
+            left: targetCard.offsetLeft - track.offsetLeft,
+            behavior: 'smooth'
+          });
+        }
+      });
+      dotsContainer.appendChild(dot);
+    });
+  }
+
+  const updateControls = () => {
+    const scrollLeft = track.scrollLeft;
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    cards.forEach((card, idx) => {
+      const distance = Math.abs((card.offsetLeft - track.offsetLeft) - scrollLeft);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = idx;
+      }
+    });
+
+    if (dotsContainer) {
+      const dots = dotsContainer.querySelectorAll('.testimonial-dot');
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === closestIndex);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = track.scrollLeft <= 10;
+    }
+    if (nextBtn) {
+      const maxScroll = track.scrollWidth - track.clientWidth - 10;
+      nextBtn.disabled = track.scrollLeft >= maxScroll;
+    }
+  };
+
+  let scrollTimeout = null;
+  track.addEventListener('scroll', () => {
+    if (scrollTimeout) cancelAnimationFrame(scrollTimeout);
+    scrollTimeout = requestAnimationFrame(updateControls);
+  }, { passive: true });
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      const card = cards[0];
+      const step = card ? card.offsetWidth + 20 : 300;
+      track.scrollBy({ left: -step, behavior: 'smooth' });
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const card = cards[0];
+      const step = card ? card.offsetWidth + 20 : 300;
+      track.scrollBy({ left: step, behavior: 'smooth' });
+    });
+  }
+
+  updateControls();
+  window.addEventListener('resize', updateControls, { passive: true });
+}
+
