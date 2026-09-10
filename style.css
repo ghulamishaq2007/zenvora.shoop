@@ -2874,3 +2874,590 @@ body.menu-open {
   .download-app-link { order: -1; }
 }
 @media (prefers-reduced-motion: reduce) { .app-install-modal { animation: none; } }
+
+/* ==========================================================================
+   FEATURE 1: SOCIAL PROOF FLOATING TOAST NOTIFICATION
+   ========================================================================== */
+.social-proof-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9990;
+  max-width: 380px;
+  width: calc(100vw - 48px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(22px) scale(0.96);
+  visibility: hidden;
+  transition: opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.38s;
+  will-change: transform, opacity;
+}
+
+.social-proof-toast.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.sp-toast-card {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  padding: 10px 14px 10px 10px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sp-toast-card:hover {
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
+  transform: translateY(-2px);
+}
+
+/* Luxury gold vertical highlight on the left edge */
+.sp-toast-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #D4AF37 0%, #AA820A 100%);
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+}
+
+.sp-toast-thumb-wrap {
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #F3F4F6;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.sp-toast-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sp-toast-body {
+  flex: 1;
+  min-width: 0;
+  padding-right: 18px; /* Room for close X */
+}
+
+.sp-toast-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.25;
+}
+
+.sp-toast-action {
+  font-size: 0.7rem;
+  color: #6B7280;
+  margin-top: 1px;
+}
+
+.sp-toast-product {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  line-height: 1.25;
+}
+
+.sp-toast-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: #9CA3AF;
+  margin-top: 2px;
+}
+
+.sp-toast-verified {
+  color: #16A34A;
+  font-weight: 600;
+}
+
+.sp-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #F9FAFB;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  color: #6B7280;
+  cursor: pointer;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  z-index: 2;
+}
+
+.sp-toast-close:hover {
+  background: #E5E7EB;
+  color: #111827;
+}
+
+@media (max-width: 640px) {
+  .social-proof-toast {
+    bottom: 16px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-width: calc(100vw - 20px);
+    margin: 0 auto;
+  }
+
+  .sp-toast-card {
+    padding: 8px 12px 8px 8px;
+    border-radius: 12px;
+    gap: 10px;
+  }
+
+  .sp-toast-thumb-wrap {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    border-radius: 8px;
+  }
+
+  .sp-toast-product {
+    font-size: 0.76rem;
+  }
+
+  .sp-toast-top {
+    font-size: 0.7rem;
+  }
+}
+
+/* ==========================================================================
+   FEATURE 2: HAPPY CUSTOMERS / CUSTOMER REVIEWS SECTION
+   ========================================================================== */
+.happy-customers-section {
+  background-color: #F8F8F6;
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 4.25rem 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.happy-customers-section .section-title {
+  font-size: 2.1rem;
+  letter-spacing: -0.01em;
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.reviews-slider-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.reviews-track {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.75rem 0.35rem 1rem;
+  width: 100%;
+  align-items: stretch; /* Equal card heights */
+}
+
+.reviews-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive Card Sizing & Equal Heights */
+.review-card {
+  /* Desktop default: 3 cards visible */
+  flex: 0 0 calc((100% - 2 * 1.25rem) / 3);
+  min-width: calc((100% - 2 * 1.25rem) / 3);
+  scroll-snap-align: start;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem 1.35rem 1.25rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Ultra-wide screens: 4 cards visible */
+@media (min-width: 1440px) {
+  .review-card {
+    flex: 0 0 calc((100% - 3 * 1.25rem) / 4);
+    min-width: calc((100% - 3 * 1.25rem) / 4);
+  }
+}
+
+/* Tablet screens: 2 cards visible */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .review-card {
+    flex: 0 0 calc((100% - 1.25rem) / 2);
+    min-width: calc((100% - 1.25rem) / 2);
+  }
+}
+
+/* Mobile screens: 1 card visible */
+@media (max-width: 767px) {
+  .happy-customers-section {
+    padding: 2.75rem 0;
+  }
+
+  .reviews-slider-wrapper {
+    gap: 0.5rem;
+    padding: 0 0.15rem;
+  }
+
+  .reviews-track {
+    gap: 0.85rem;
+    padding: 0.5rem 0.25rem 0.75rem;
+  }
+
+  .review-card {
+    flex: 0 0 100%;
+    min-width: 100%;
+    scroll-snap-align: center;
+    padding: 1.35rem 1.15rem 1.15rem;
+    border-radius: 14px;
+  }
+}
+
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.08);
+  border-color: rgba(212, 175, 55, 0.4);
+}
+
+.review-card-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.review-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.review-rating {
+  color: #D4AF37;
+  font-size: 1.05rem;
+  letter-spacing: 2px;
+  display: flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.review-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: var(--success-bg);
+  border: 1px solid rgba(22, 163, 74, 0.25);
+  color: var(--success);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.review-text {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #2D3748;
+  font-style: italic;
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+/* Customer photo / WhatsApp review thumbnail */
+.review-photo-wrap {
+  position: relative;
+  width: 100%;
+  height: 130px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #F3F4F6;
+  border: 1px solid var(--border-color);
+  margin-bottom: 1.15rem;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.review-photo-wrap:hover {
+  transform: scale(1.01);
+}
+
+.review-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.review-photo-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(17, 17, 17, 0.82);
+  color: #FFFFFF;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  letter-spacing: 0.02em;
+}
+
+/* Review Author Footer */
+.review-author-footer {
+  border-top: 1px solid var(--border-light);
+  padding-top: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.review-avatar {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #111111 0%, #2C3E50 100%);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.review-author-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.review-author-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.25;
+  margin: 0;
+}
+
+.review-author-location {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Nav Arrows */
+.review-nav-btn {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.review-nav-btn:hover {
+  background: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+  transform: scale(1.05);
+}
+
+.review-nav-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 640px) {
+  .review-nav-btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+  }
+}
+
+/* Dots */
+.review-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  margin-top: 1.5rem;
+}
+
+.review-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #D1D5DB;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.review-dot.active {
+  width: 24px;
+  background: var(--accent);
+}
+
+/* ==========================================================================
+   CUSTOMER REVIEW PHOTO LIGHTBOX
+   ========================================================================== */
+.review-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.25s ease, visibility 0.25s;
+}
+
+.review-lightbox.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.review-lightbox-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.review-lightbox-dialog {
+  position: relative;
+  z-index: 2;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #111111;
+  padding: 8px;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.review-lightbox-img {
+  max-width: 85vw;
+  max-height: 75vh;
+  object-fit: contain;
+  border-radius: 8px;
+  display: block;
+}
+
+.review-lightbox-caption {
+  color: #E5E7EB;
+  font-size: 0.84rem;
+  margin-top: 8px;
+  text-align: center;
+}
+
+.review-lightbox-close {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 32px;
+  height: 32px;
+  background: #FFFFFF;
+  color: #111111;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.review-lightbox-close:hover {
+  transform: scale(1.1);
+  background: #F3F4F6;
+}
+

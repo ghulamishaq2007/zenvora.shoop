@@ -3,6 +3,127 @@
    Brand: ZENVORA SHOOP | WhatsApp: 03232974451
    ========================================================================== */
 
+/* ==========================================================================
+   FEATURE 1: SOCIAL PROOF NOTIFICATIONS (EDITABLE DEMO DATA)
+   Instructions: You can freely add, edit, or remove items in this array.
+   Notifications rotate every 6-8 seconds automatically on the homepage.
+   ========================================================================== */
+const socialProofNotifications = [
+  {
+    name: "Muskan",
+    location: "Karachi",
+    product: "Turquoise Block Printed 3Pcs Maxi Set",
+    image: "arabic-lawn.png.jpeg",
+    time: "4 minutes ago"
+  },
+  {
+    name: "Nimra",
+    location: "DHA Phase 6, Karachi",
+    product: "Wash & Wear Men's Plain Suit (Brown)",
+    image: "men-wash-&-wear-plain-suit-brown.png.jpeg",
+    time: "8 minutes ago"
+  },
+  {
+    name: "Laiba",
+    location: "PECHS, Karachi",
+    product: "Girl's Leather Textured Hand Bag",
+    image: "girl-leather-textured-hand-bag.png.jpeg",
+    time: "14 minutes ago"
+  },
+  {
+    name: "Bilal",
+    location: "Bahria Town, Karachi",
+    product: "Men's Grey Wash & Wear Kurta Suit",
+    image: "mens-grey.png.jpeg",
+    time: "19 minutes ago"
+  },
+  {
+    name: "Eman",
+    location: "Gulshan-e-Iqbal, Karachi",
+    product: "Printed Lawn 3-Piece Suit (Multicolor)",
+    image: "printed-lawn-3.png.jpeg",
+    time: "26 minutes ago"
+  },
+  {
+    name: "Kinza",
+    location: "Clifton, Karachi",
+    product: "Orange Cross-Strap Rexine Slides",
+    image: "orange-cross-strap-rexine-slides-for-women.png",
+    time: "33 minutes ago"
+  },
+  {
+    name: "Anika",
+    location: "North Nazimabad, Karachi",
+    product: "Women White Rexine Fancy Slippers",
+    image: "women-white-rexine-fancy-slippers.jpeg",
+    time: "41 minutes ago"
+  }
+];
+
+/* ==========================================================================
+   FEATURE 2: HAPPY CUSTOMERS REVIEWS (EDITABLE CUSTOMER REVIEWS)
+   Instructions: You can easily update this array with your real reviews.
+   Review cards display on desktop (3-4 at a time) and mobile (slider).
+   ========================================================================== */
+const customerReviews = [
+  {
+    name: "Ayesha Khan",
+    location: "Clifton, Karachi",
+    rating: 5,
+    review: "Amazing quality and exactly as shown in the pictures. The Arabic Lawn fabric is so soft, breathable, and gracefully draped. Really satisfied with my order.",
+    image: "arabic-lawn.png.jpeg"
+  },
+  {
+    name: "Hamza Tariq",
+    location: "DHA Phase 6, Karachi",
+    rating: 5,
+    review: "Ordered the Wash & Wear men's suit fabric for office wear. Wrinkle-resistant, elegant drape, and top-tier texture. Cash on delivery was swift and seamless.",
+    image: "men-wash-&-wear-plain-suit-brown.png.jpeg"
+  },
+  {
+    name: "Fatima Zahra",
+    location: "PECHS, Karachi",
+    rating: 5,
+    review: "The textured leather shoulder bag looks even more luxurious in person! Sturdy gold hardware, roomy compartments, and meticulous stitching. 100% recommended!",
+    image: "girl-leather-textured-shoulder-bag.jpeg"
+  },
+  {
+    name: "Bilal Ahmed",
+    location: "Gulshan-e-Iqbal, Karachi",
+    rating: 5,
+    review: "The cotton unstitched suit is ideal for summer heat. Light, premium finish, and prompt dispatch right to my doorstep. Smooth ordering via WhatsApp.",
+    image: "men-cotton-unstitched-suit-light-brown-summer.png.jpeg"
+  },
+  {
+    name: "Mahnoor Siddiqui",
+    location: "Bahria Town, Karachi",
+    rating: 5,
+    review: "The cotton lawn colors remained completely vibrant after washing. Authentic Pakistani craftsmanship and highly responsive WhatsApp customer care.",
+    image: "cotton-lawn.png.jpeg"
+  },
+  {
+    name: "Zainab Malik",
+    location: "North Nazimabad, Karachi",
+    rating: 5,
+    review: "Super comfortable footwear and slides! Pure rexine material with soft cushion soles. Perfect fitting, exactly as ordered and great value for money.",
+    image: "orange-cross-strap-rexine-slides-for-women.png"
+  },
+  {
+    name: "Usman Ghani",
+    location: "Tariq Road, Karachi",
+    rating: 5,
+    review: "Outstanding quality men's kurta suit SW-2. Crisp wash-and-wear fabric that looks sharp all day. Cash on delivery courier was polite and fast.",
+    image: "mens-grey.png.jpeg"
+  },
+  {
+    name: "Hira Farooq",
+    location: "Gulistan-e-Johar, Karachi",
+    rating: 5,
+    review: "I received the printed lawn 3-piece set today. The dupatta and print border are even prettier than the photos! Thank you ZENVORA SHOOP for genuine service.",
+    image: "printed-lawn-3.png.jpeg"
+  }
+];
+
 // --- Global Toast Notification Helper ---
 function showToast(message, type = 'success') {
   let container = document.getElementById('toast-container');
@@ -139,8 +260,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Product Quick Add Buttons on Grid ---
   initQuickAddButtons();
 
-  // --- Testimonials Slider ---
+  // --- Original Testimonials Slider ("What Our Customers Say") ---
   initTestimonialsSlider();
+
+  // --- Happy Customers Reviews Slider ("HAPPY CUSTOMERS ❤️") ---
+  initHappyCustomersReviews();
+
+  // --- Recent Activity / Purchase Notification Popup ---
+  initSocialProofNotifications();
+
+  // --- Customer Review Photo Lightbox ---
+  initReviewLightbox();
 
   // --- FAQ Accordion ---
   initFaqAccordion();
@@ -508,7 +638,20 @@ function initProductDetailPage(config) {
   });
 }
 
-// 10. Testimonials Slider
+// Utility function to escape HTML
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ==========================================================================
+// 1. EXISTING SECTION: WHAT OUR CUSTOMERS SAY (ORIGINAL TESTIMONIALS SLIDER)
+// ==========================================================================
 function initTestimonialsSlider() {
   const track = document.getElementById('testimonials-track');
   const prevBtn = document.getElementById('testimonial-prev-btn');
@@ -594,6 +737,345 @@ function initTestimonialsSlider() {
 
   updateControls();
   window.addEventListener('resize', updateControls, { passive: true });
+}
+
+// ==========================================================================
+// 2. NEW SECTION: HAPPY CUSTOMERS ❤️ (CUSTOMER REVIEWS & SCREENSHOTS)
+// ==========================================================================
+function initHappyCustomersReviews() {
+  const track = document.getElementById('reviews-track');
+  const prevBtn = document.getElementById('review-prev-btn');
+  const nextBtn = document.getElementById('review-next-btn');
+  const dotsContainer = document.getElementById('review-dots');
+
+  if (!track) return;
+
+  // Render review cards dynamically from the customerReviews array
+  if (Array.isArray(customerReviews) && customerReviews.length > 0) {
+    track.innerHTML = customerReviews.map((item, idx) => {
+      // Calculate initials (e.g., "Ayesha Khan" -> "AK")
+      const nameParts = (item.name || 'Customer').trim().split(/\s+/);
+      const initials = nameParts.length > 1
+        ? (nameParts[0][0] + nameParts[nameParts.length - 1][0]).toUpperCase()
+        : (nameParts[0] ? nameParts[0].slice(0, 2).toUpperCase() : 'CU');
+
+      const ratingCount = Math.max(1, Math.min(5, Number(item.rating) || 5));
+      const stars = '★'.repeat(ratingCount);
+
+      // Photo block if an image is provided
+      const photoHtml = item.image ? `
+        <div class="review-photo-wrap" data-img="${escapeHtml(item.image)}" data-caption="Review from ${escapeHtml(item.name)}, ${escapeHtml(item.location)}" title="Click to enlarge customer photo">
+          <img src="${escapeHtml(item.image)}" alt="Review Photo from ${escapeHtml(item.name)}" class="review-photo-img" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <span class="review-photo-badge">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            Customer Photo
+          </span>
+        </div>
+      ` : '';
+
+      return `
+        <article class="review-card" data-index="${idx}">
+          <div class="review-card-content">
+            <div class="review-card-header">
+              <div class="review-rating" aria-label="${ratingCount} out of 5 stars">
+                ${stars}
+              </div>
+              <span class="review-verified-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Verified Buyer
+              </span>
+            </div>
+            <p class="review-text">"${escapeHtml(item.review)}"</p>
+            ${photoHtml}
+          </div>
+          <div class="review-author-footer">
+            <div class="review-avatar" aria-hidden="true">${escapeHtml(initials)}</div>
+            <div class="review-author-meta">
+              <h3 class="review-author-name">${escapeHtml(item.name)}</h3>
+              <span class="review-author-location">📍 ${escapeHtml(item.location)}</span>
+            </div>
+          </div>
+        </article>
+      `;
+    }).join('');
+  }
+
+  const cards = track.querySelectorAll('.review-card');
+  if (!cards.length) return;
+
+  // Build pagination dots
+  if (dotsContainer) {
+    dotsContainer.innerHTML = '';
+    cards.forEach((_, idx) => {
+      const dot = document.createElement('button');
+      dot.className = `review-dot ${idx === 0 ? 'active' : ''}`;
+      dot.setAttribute('type', 'button');
+      dot.setAttribute('aria-label', `Go to review ${idx + 1}`);
+      dot.addEventListener('click', () => {
+        const targetCard = cards[idx];
+        if (targetCard) {
+          track.scrollTo({
+            left: targetCard.offsetLeft - track.offsetLeft,
+            behavior: 'smooth'
+          });
+        }
+      });
+      dotsContainer.appendChild(dot);
+    });
+  }
+
+  // Update button states & active dot indicator
+  const updateControls = () => {
+    const scrollLeft = track.scrollLeft;
+    let closestIndex = 0;
+    let minDistance = Infinity;
+
+    cards.forEach((card, idx) => {
+      const distance = Math.abs((card.offsetLeft - track.offsetLeft) - scrollLeft);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestIndex = idx;
+      }
+    });
+
+    if (dotsContainer) {
+      const dots = dotsContainer.querySelectorAll('.review-dot');
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === closestIndex);
+      });
+    }
+
+    if (prevBtn) {
+      prevBtn.disabled = track.scrollLeft <= 10;
+    }
+    if (nextBtn) {
+      const maxScroll = track.scrollWidth - track.clientWidth - 10;
+      nextBtn.disabled = track.scrollLeft >= maxScroll;
+    }
+  };
+
+  let scrollTimeout = null;
+  track.addEventListener('scroll', () => {
+    if (scrollTimeout) cancelAnimationFrame(scrollTimeout);
+    scrollTimeout = requestAnimationFrame(updateControls);
+  }, { passive: true });
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', () => {
+      const card = cards[0];
+      const step = card ? card.offsetWidth + 20 : 320;
+      track.scrollBy({ left: -step, behavior: 'smooth' });
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      const card = cards[0];
+      const step = card ? card.offsetWidth + 20 : 320;
+      track.scrollBy({ left: step, behavior: 'smooth' });
+    });
+  }
+
+  // Attach lightbox preview click to review photos
+  track.querySelectorAll('.review-photo-wrap').forEach(wrap => {
+    wrap.addEventListener('click', () => {
+      const imgSrc = wrap.getAttribute('data-img');
+      const caption = wrap.getAttribute('data-caption') || 'Customer Review Photo';
+      if (imgSrc && typeof openReviewLightbox === 'function') {
+        openReviewLightbox(imgSrc, caption);
+      }
+    });
+  });
+
+  updateControls();
+  window.addEventListener('resize', updateControls, { passive: true });
+}
+
+// ==========================================================================
+// FEATURE 1: SOCIAL PROOF NOTIFICATIONS FLOATING POPUP
+// ==========================================================================
+function initSocialProofNotifications() {
+  const container = document.getElementById('social-proof-toast');
+  if (!container) return;
+  if (!Array.isArray(socialProofNotifications) || socialProofNotifications.length === 0) return;
+
+  let availableIndices = [];
+  let lastIndex = -1;
+  let rotationTimer = null;
+  let hideTimer = null;
+  let isHovered = false;
+  let isDismissed = false;
+
+  // Non-repeating randomized shuffle bag
+  function getNextNotification() {
+    if (socialProofNotifications.length === 1) {
+      return socialProofNotifications[0];
+    }
+
+    if (availableIndices.length === 0) {
+      availableIndices = Array.from({ length: socialProofNotifications.length }, (_, i) => i);
+      // Fisher-Yates shuffle
+      for (let i = availableIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [availableIndices[i], availableIndices[j]] = [availableIndices[j], availableIndices[i]];
+      }
+      // Ensure the first item in the new bag isn't the same as the last shown
+      if (availableIndices[0] === lastIndex && availableIndices.length > 1) {
+        const temp = availableIndices[0];
+        availableIndices[0] = availableIndices[availableIndices.length - 1];
+        availableIndices[availableIndices.length - 1] = temp;
+      }
+    }
+
+    const nextIndex = availableIndices.shift();
+    lastIndex = nextIndex;
+    return socialProofNotifications[nextIndex];
+  }
+
+  function hideNotification(callback) {
+    container.classList.remove('visible');
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    // Wait for the slide-down / fade-out transition (400ms)
+    setTimeout(() => {
+      if (callback) callback();
+    }, 400);
+  }
+
+  function showNextNotification() {
+    if (isDismissed || isHovered) return;
+
+    hideNotification(() => {
+      if (isDismissed || isHovered) return;
+
+      const item = getNextNotification();
+      if (!item) return;
+
+      const buyerLocation = item.location ? escapeHtml(item.location) : 'Karachi';
+      const productName = item.product ? escapeHtml(item.product) : 'Product';
+      const timeText = item.time ? escapeHtml(item.time) : 'A few minutes ago';
+      const imgSrc = item.image ? escapeHtml(item.image) : 'arabic-lawn.png.jpeg';
+
+      container.innerHTML = `
+        <div class="sp-toast-card">
+          <button type="button" class="sp-toast-close" id="sp-toast-close-btn" aria-label="Dismiss notification">&times;</button>
+          <div class="sp-toast-thumb-wrap">
+            <img src="${imgSrc}" alt="${productName}" class="sp-toast-thumb" loading="lazy" onerror="this.src='icon-192.png'">
+          </div>
+          <div class="sp-toast-body">
+            <div class="sp-toast-top">
+              <span>🛍️</span>
+              <span>Customer from ${buyerLocation}</span>
+            </div>
+            <div class="sp-toast-action">Recently purchased</div>
+            <div class="sp-toast-product" title="${productName}">${productName}</div>
+            <div class="sp-toast-meta">
+              <span>${timeText}</span>
+              <span class="sp-toast-verified">• Verified Order</span>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Wire close X button
+      const closeBtn = container.querySelector('#sp-toast-close-btn');
+      if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          hideNotification();
+          isDismissed = true;
+          // Temporarily pause notifications for 45s after user dismisses
+          setTimeout(() => {
+            isDismissed = false;
+          }, 45000);
+        });
+      }
+
+      // Smooth slide-in and fade-in
+      container.classList.add('visible');
+
+      // Stay visible for 4.2 seconds, then fade out
+      hideTimer = setTimeout(() => {
+        if (!isHovered) {
+          hideNotification();
+        }
+      }, 4200);
+    });
+  }
+
+  // Desktop hover pause & resume
+  container.addEventListener('mouseenter', () => {
+    isHovered = true;
+    if (hideTimer) {
+      clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+  });
+
+  container.addEventListener('mouseleave', () => {
+    isHovered = false;
+    // Resume hiding after 2.5s on mouseleave
+    if (container.classList.contains('visible')) {
+      hideTimer = setTimeout(() => {
+        hideNotification();
+      }, 2500);
+    }
+  });
+
+  // Initial delay of 3 seconds before first notification appears
+  setTimeout(() => {
+    showNextNotification();
+    // Rotate every 7 seconds (within the 6-8 second requirement)
+    rotationTimer = setInterval(() => {
+      if (!isDismissed && !isHovered) {
+        showNextNotification();
+      }
+    }, 7000);
+  }, 3000);
+}
+
+// ==========================================================================
+// CUSTOMER REVIEW PHOTO LIGHTBOX PREVIEW
+// ==========================================================================
+let openReviewLightbox = null;
+
+function initReviewLightbox() {
+  const modal = document.getElementById('review-lightbox');
+  const img = document.getElementById('review-lightbox-img');
+  const caption = document.getElementById('review-lightbox-caption');
+  const backdrop = document.getElementById('review-lightbox-backdrop');
+  const closeBtn = document.getElementById('review-lightbox-close');
+
+  if (!modal || !img) return;
+
+  function closeModal() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  openReviewLightbox = function(src, captionText) {
+    img.src = src;
+    img.alt = captionText || 'Customer Review Photo';
+    if (caption) caption.textContent = captionText || '';
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  };
+
+  if (backdrop) backdrop.addEventListener('click', closeModal);
+  if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) {
+      closeModal();
+    }
+  });
 }
 
 // FAQ Accordion functionality

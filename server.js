@@ -9,8 +9,8 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
-// Determine static root: dist if it exists, otherwise project root
-const staticDir = fs.existsSync(path.join(__dirname, 'dist', 'index.html'))
+// Determine static root: dist in production if it exists, otherwise project root for live development
+const staticDir = (process.env.NODE_ENV === 'production' && fs.existsSync(path.join(__dirname, 'dist', 'index.html')))
   ? path.join(__dirname, 'dist')
   : __dirname;
 

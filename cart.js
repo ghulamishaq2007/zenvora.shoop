@@ -19,12 +19,17 @@ const PRODUCT_URLS = {
   "printed-lawn-suit-white": "printed-lawn-suit-white.html",
   "men-cotton-unstitched-suit-light-brown-summer": "men-cotton-unstitched-suit-light-brown-summer.html",
   "gents-peshawari-chappal": "gents-peshawari-chappal.html",
-  "black-wash-wear-men-suit-fabric-for-all-season": "black-wash-wear-men-suit-fabric-for-all-season.html",
+  "black-wash-wear-men-suit-fabric-for-all-season": "black-wash-&-wear-men-suit-fabric-for-all-season.htm",
+  "black-wash-&-wear-men-suit-fabric-for-all-season": "black-wash-&-wear-men-suit-fabric-for-all-season.htm",
+  "black-Gents Suits": "black-wash-&-wear-men-suit-fabric-for-all-season.htm",
   "men-blue-suit": "men-blue-suit.html",
   "men-wash-&-wear-plain-suit-brown": "men-wash-&-wear-plain-suit-brown.html",
+  "men-charcoal-suit": "men-wash-&-wear-plain-suit-brown.html",
   "mens-grey": "mens-grey.html",
   "men-khaddar-plain-blue-suit-summer": "men-khaddar-plain-blue-suit-summer.html",
   "tan-leather-shoes": "tan-leather-shoes.html",
+  "orange-cross-strap-rexine-slides-for-women": "orange-cross-strap-rexine-slides-for-women.html",
+  "women-white-rexine-fancy-slippers": "women-white-rexine-fancy-slippers.html",
   "gents-peshawari-chappal": "gents-peshawari-chappal.html"
 
 };
