@@ -260,11 +260,56 @@ function renderCart() {
 const renderCartPage = renderCart;
 
 // ==========================================
-// OPTIONAL LOCATION MODAL & ORDER FLOW
+// OPTIONAL LOCATION STORAGE & ORDER FLOW
 // ==========================================
 
 let activeOrderPayload = null;
 let isGeolocationPending = false;
+let modalActiveCallback = null;
+
+/**
+ * Saves customer GPS coordinates in memory and sessionStorage
+ */
+function saveCustomerCoordinates(lat, lng) {
+  const numLat = Number(lat);
+  const numLng = Number(lng);
+  if (!isNaN(numLat) && !isNaN(numLng) && isFinite(numLat) && isFinite(numLng)) {
+    const coords = { latitude: numLat, longitude: numLng };
+    window._zenvoraOrderLocation = coords;
+    try {
+      sessionStorage.setItem('zenvora_customer_coords', JSON.stringify(coords));
+      sessionStorage.removeItem('zenvora_location_declined');
+    } catch (err) {
+      // Storage access protected or private browsing
+    }
+    return coords;
+  }
+  return null;
+}
+
+/**
+ * Retrieves saved customer GPS coordinates for the current order
+ */
+function getSavedCustomerCoordinates() {
+  if (
+    window._zenvoraOrderLocation &&
+    typeof window._zenvoraOrderLocation.latitude === 'number' &&
+    typeof window._zenvoraOrderLocation.longitude === 'number'
+  ) {
+    return window._zenvoraOrderLocation;
+  }
+  try {
+    const stored = sessionStorage.getItem('zenvora_customer_coords');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed && typeof parsed.latitude === 'number' && typeof parsed.longitude === 'number') {
+        window._zenvoraOrderLocation = parsed;
+        return parsed;
+      }
+    }
+  } catch (err) {}
+  return null;
+}
 
 /**
  * Creates or retrieves the location confirmation popup
@@ -303,37 +348,62 @@ function getLocationModal() {
     const closeBtn = modal.querySelector('#btn-modal-close');
 
     allowBtn.addEventListener('click', () => {
-      handleModalAllowLocation();
+      handleModalAllowLocation(modalActiveCallback);
     });
 
     skipBtn.addEventListener('click', () => {
+      try {
+        sessionStorage.setItem('zenvora_location_declined', 'true');
+      } catch (err) {}
+      const cb = modalActiveCallback;
       closeLocationModal();
-      proceedWithWhatsAppOrder(null);
+      if (typeof cb === 'function') {
+        cb(null);
+      }
     });
 
     closeBtn.addEventListener('click', () => {
+      try {
+        sessionStorage.setItem('zenvora_location_declined', 'true');
+      } catch (err) {}
+      const cb = modalActiveCallback;
       closeLocationModal();
-      proceedWithWhatsAppOrder(null);
+      if (typeof cb === 'function') {
+        cb(null);
+      }
     });
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
+        try {
+          sessionStorage.setItem('zenvora_location_declined', 'true');
+        } catch (err) {}
+        const cb = modalActiveCallback;
         closeLocationModal();
-        proceedWithWhatsAppOrder(null);
+        if (typeof cb === 'function') {
+          cb(null);
+        }
       }
     });
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && modal.classList.contains('active')) {
+        try {
+          sessionStorage.setItem('zenvora_location_declined', 'true');
+        } catch (err) {}
+        const cb = modalActiveCallback;
         closeLocationModal();
-        proceedWithWhatsAppOrder(null);
+        if (typeof cb === 'function') {
+          cb(null);
+        }
       }
     });
   }
   return modal;
 }
 
-function showLocationModal() {
+function showLocationModal(callbackOnComplete) {
+  modalActiveCallback = typeof callbackOnComplete === 'function' ? callbackOnComplete : null;
   const modal = getLocationModal();
   const allowBtn = modal.querySelector('#btn-modal-allow');
   if (allowBtn) {
@@ -351,9 +421,10 @@ function closeLocationModal() {
   }
   document.body.style.overflow = '';
   isGeolocationPending = false;
+  modalActiveCallback = null;
 }
 
-function handleModalAllowLocation() {
+function handleModalAllowLocation(callbackWhenDone) {
   if (isGeolocationPending) return;
   isGeolocationPending = true;
 
@@ -361,23 +432,27 @@ function handleModalAllowLocation() {
   const allowBtn = modal.querySelector('#btn-modal-allow');
   if (allowBtn) {
     allowBtn.disabled = true;
-    allowBtn.innerHTML = '<span>Requesting permission...</span>';
+    allowBtn.innerHTML = '<span>Getting location...</span>';
   }
 
   // If geolocation is not supported by the browser
   if (!navigator.geolocation) {
     closeLocationModal();
-    proceedWithWhatsAppOrder(null);
+    if (typeof callbackWhenDone === 'function') {
+      callbackWhenDone(null);
+    }
     return;
   }
 
   let finished = false;
-  // Safety timeout: ensure customer is never trapped or delayed
+  // Safety fallback timeout: ensure customer is never trapped or delayed
   const fallbackTimer = setTimeout(() => {
     if (!finished) {
       finished = true;
       closeLocationModal();
-      proceedWithWhatsAppOrder(null);
+      if (typeof callbackWhenDone === 'function') {
+        callbackWhenDone(getSavedCustomerCoordinates());
+      }
     }
   }, 8000);
 
@@ -386,22 +461,34 @@ function handleModalAllowLocation() {
       if (finished) return;
       finished = true;
       clearTimeout(fallbackTimer);
+      
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const savedCoords = saveCustomerCoordinates(lat, lng);
+
       closeLocationModal();
-      const coords = {
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude
-      };
-      proceedWithWhatsAppOrder(coords);
+
+      if (typeof callbackWhenDone === 'function') {
+        callbackWhenDone(savedCoords);
+      }
     },
     (error) => {
-      // Denied, unavailable, or timed out:
-      // DO NOT block the order. DO NOT show an error.
-      // Simply proceed with normal WhatsApp order without location.
+      // Customer denied, or location unavailable/timed out:
+      // DO NOT block the order. DO NOT show a blocking error.
+      // Save declined state and proceed normally without location.
       if (finished) return;
       finished = true;
       clearTimeout(fallbackTimer);
+      
+      try {
+        sessionStorage.setItem('zenvora_location_declined', 'true');
+      } catch (err) {}
+
       closeLocationModal();
-      proceedWithWhatsAppOrder(null);
+
+      if (typeof callbackWhenDone === 'function') {
+        callbackWhenDone(null);
+      }
     },
     {
       enableHighAccuracy: true,
@@ -486,8 +573,28 @@ function handleWhatsAppOrder(e) {
     cart
   };
 
-  // Trigger optional location popup (Order is NEVER blocked)
-  showLocationModal();
+  // Check if real coordinates are already saved for this order
+  const existingCoords = getSavedCustomerCoordinates();
+  if (existingCoords) {
+    proceedWithWhatsAppOrder(existingCoords);
+    return;
+  }
+
+  // Check if customer explicitly chose to continue without location
+  let hasDeclined = false;
+  try {
+    hasDeclined = sessionStorage.getItem('zenvora_location_declined') === 'true';
+  } catch (err) {}
+
+  if (hasDeclined || !navigator.geolocation) {
+    proceedWithWhatsAppOrder(null);
+    return;
+  }
+
+  // Trigger optional location confirmation popup
+  showLocationModal((coords) => {
+    proceedWithWhatsAppOrder(coords);
+  });
 }
 
 /**
@@ -506,10 +613,15 @@ function proceedWithWhatsAppOrder(coords) {
   message += `Delivery Area:\n${area}\n\n`;
   message += `Address:\n${address}\n\n`;
 
-  // IF CUSTOMER ALLOWS LOCATION: Add Google Maps link
+  // IF CUSTOMER ALLOWS LOCATION: Add real Google Maps link from coordinates
   // IF CUSTOMER DENIES OR OMITS LOCATION: Simply omit this section
-  if (coords && coords.latitude && coords.longitude) {
-    message += `📍 Customer Location:\nhttps://www.google.com/maps?q=${coords.latitude},${coords.longitude}\n\n`;
+  const coordsToUse = coords || getSavedCustomerCoordinates();
+  if (
+    coordsToUse &&
+    typeof coordsToUse.latitude === 'number' &&
+    typeof coordsToUse.longitude === 'number'
+  ) {
+    message += `📍 Customer Location:\nhttps://www.google.com/maps?q=${coordsToUse.latitude},${coordsToUse.longitude}\n\n`;
   }
 
   message += `ORDER DETAILS:\n\n`;
@@ -554,5 +666,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const checkoutForm = document.getElementById('checkout-form');
   if (checkoutForm) {
     checkoutForm.addEventListener('submit', handleWhatsAppOrder);
+
+    // Customer opens checkout -> Prompt location permission if not already saved or declined
+    const cart = getCart();
+    if (cart && cart.length > 0) {
+      const alreadySaved = getSavedCustomerCoordinates();
+      let alreadyDeclined = false;
+      try {
+        alreadyDeclined = sessionStorage.getItem('zenvora_location_declined') === 'true';
+      } catch (err) {}
+
+      if (!alreadySaved && !alreadyDeclined && navigator.geolocation) {
+        setTimeout(() => {
+          if (!activeOrderPayload && !getSavedCustomerCoordinates()) {
+            showLocationModal();
+          }
+        }, 500);
+      }
+    }
   }
 });
