@@ -259,135 +259,156 @@ function renderCart() {
 // Alias for renderCartPage for backwards-compatibility
 const renderCartPage = renderCart;
 
-// --- Optional Customer Location Feature ---
-let customerLocationCoords = null;
-let isFetchingLocation = false;
+// ==========================================
+// OPTIONAL LOCATION MODAL & ORDER FLOW
+// ==========================================
 
-function setLocationButtonState(state, customText) {
-  const btn = document.getElementById('btn-use-location');
-  const btnText = document.getElementById('location-btn-text');
-  if (!btn || !btnText) return;
+let activeOrderPayload = null;
+let isGeolocationPending = false;
 
-  if (state === 'loading') {
-    btn.disabled = true;
-    btn.classList.add('loading');
-    btnText.textContent = customText || 'Getting your location...';
-  } else if (state === 'attached') {
-    btn.disabled = false;
-    btn.classList.remove('loading');
-    btn.classList.add('attached');
-    btnText.textContent = customText || '✓ Location Attached (Tap to refresh)';
-  } else {
-    btn.disabled = false;
-    btn.classList.remove('loading', 'attached');
-    btnText.textContent = customText || 'Use My Current Location';
-  }
-}
-
-function displayLocationMessage(type, messageText, allowRemove = false) {
-  const container = document.getElementById('location-status-container');
-  if (!container) return;
-
-  container.style.display = 'block';
-  if (type === 'success') {
-    container.className = 'location-status-container location-status-success';
-    container.innerHTML = `
-      <div class="location-status-inner">
-        <span class="location-status-icon">✓</span>
-        <div class="location-status-text">
-          <strong>Location Attached:</strong> ${messageText}
-          ${customerLocationCoords ? `<div class="location-coords-preview">https://www.google.com/maps?q=${customerLocationCoords.latitude},${customerLocationCoords.longitude}</div>` : ''}
-        </div>
-        ${allowRemove ? `<button type="button" class="btn-clear-location" id="btn-clear-location" title="Remove location">Remove</button>` : ''}
-      </div>
-    `;
-    const clearBtn = document.getElementById('btn-clear-location');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', clearCustomerLocation);
-    }
-  } else {
-    // Non-blocking informational note (never an error that prevents checkout)
-    container.className = 'location-status-container location-status-info';
-    container.innerHTML = `
-      <div class="location-status-inner">
-        <span class="location-status-icon">ℹ️</span>
-        <div class="location-status-text">
-          ${messageText}
+/**
+ * Creates or retrieves the location confirmation popup
+ */
+function getLocationModal() {
+  let modal = document.getElementById('location-confirm-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'location-confirm-modal';
+    modal.className = 'location-modal-backdrop';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'location-modal-title');
+    modal.innerHTML = `
+      <div class="location-modal-card">
+        <button type="button" class="btn-modal-close-x" id="btn-modal-close" aria-label="Close">×</button>
+        <div class="location-modal-icon-wrap">📍</div>
+        <h3 class="location-modal-title" id="location-modal-title">Share Your Location?</h3>
+        <p class="location-modal-desc">
+          Sharing your current location can help us locate your delivery address more easily.
+        </p>
+        <div class="location-modal-actions">
+          <button type="button" class="btn-modal-allow-loc" id="btn-modal-allow">
+            <span>📍 Allow Location</span>
+          </button>
+          <button type="button" class="btn-modal-skip-loc" id="btn-modal-skip">
+            <span>Continue Without Location</span>
+          </button>
         </div>
       </div>
     `;
+    document.body.appendChild(modal);
+
+    const allowBtn = modal.querySelector('#btn-modal-allow');
+    const skipBtn = modal.querySelector('#btn-modal-skip');
+    const closeBtn = modal.querySelector('#btn-modal-close');
+
+    allowBtn.addEventListener('click', () => {
+      handleModalAllowLocation();
+    });
+
+    skipBtn.addEventListener('click', () => {
+      closeLocationModal();
+      proceedWithWhatsAppOrder(null);
+    });
+
+    closeBtn.addEventListener('click', () => {
+      closeLocationModal();
+      proceedWithWhatsAppOrder(null);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeLocationModal();
+        proceedWithWhatsAppOrder(null);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeLocationModal();
+        proceedWithWhatsAppOrder(null);
+      }
+    });
   }
+  return modal;
 }
 
-function clearCustomerLocation() {
-  customerLocationCoords = null;
-  setLocationButtonState('default');
-  const container = document.getElementById('location-status-container');
-  if (container) {
-    container.style.display = 'none';
-    container.innerHTML = '';
+function showLocationModal() {
+  const modal = getLocationModal();
+  const allowBtn = modal.querySelector('#btn-modal-allow');
+  if (allowBtn) {
+    allowBtn.disabled = false;
+    allowBtn.innerHTML = '<span>📍 Allow Location</span>';
   }
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
 }
 
-function requestCustomerLocation() {
-  if (isFetchingLocation) return;
+function closeLocationModal() {
+  const modal = document.getElementById('location-confirm-modal');
+  if (modal) {
+    modal.classList.remove('active');
+  }
+  document.body.style.overflow = '';
+  isGeolocationPending = false;
+}
 
+function handleModalAllowLocation() {
+  if (isGeolocationPending) return;
+  isGeolocationPending = true;
+
+  const modal = getLocationModal();
+  const allowBtn = modal.querySelector('#btn-modal-allow');
+  if (allowBtn) {
+    allowBtn.disabled = true;
+    allowBtn.innerHTML = '<span>Requesting permission...</span>';
+  }
+
+  // If geolocation is not supported by the browser
   if (!navigator.geolocation) {
-    customerLocationCoords = null;
-    displayLocationMessage(
-      'info',
-      'Location is not supported by your browser. No problem! Your order will be placed using your typed delivery address.'
-    );
+    closeLocationModal();
+    proceedWithWhatsAppOrder(null);
     return;
   }
 
-  isFetchingLocation = true;
-  setLocationButtonState('loading', 'Getting your location...');
+  let finished = false;
+  // Safety timeout: ensure customer is never trapped or delayed
+  const fallbackTimer = setTimeout(() => {
+    if (!finished) {
+      finished = true;
+      closeLocationModal();
+      proceedWithWhatsAppOrder(null);
+    }
+  }, 8000);
 
   navigator.geolocation.getCurrentPosition(
     (position) => {
-      isFetchingLocation = false;
-      customerLocationCoords = {
+      if (finished) return;
+      finished = true;
+      clearTimeout(fallbackTimer);
+      closeLocationModal();
+      const coords = {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude
       };
-
-      setLocationButtonState('attached');
-      displayLocationMessage(
-        'success',
-        'GPS coordinates attached. Google Maps link will be included in your WhatsApp order.',
-        true
-      );
+      proceedWithWhatsAppOrder(coords);
     },
     (error) => {
-      isFetchingLocation = false;
-      customerLocationCoords = null;
-      setLocationButtonState('default');
-
-      // Customer chose Deny, or permission timed out / was unavailable:
-      // DO NOT block the order. DO NOT show an error that prevents checkout.
-      // Simply inform them that the order will proceed with typed address.
-      displayLocationMessage(
-        'info',
-        'Location was not shared (Optional). Your order will proceed normally using your typed address.'
-      );
+      // Denied, unavailable, or timed out:
+      // DO NOT block the order. DO NOT show an error.
+      // Simply proceed with normal WhatsApp order without location.
+      if (finished) return;
+      finished = true;
+      clearTimeout(fallbackTimer);
+      closeLocationModal();
+      proceedWithWhatsAppOrder(null);
     },
     {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 7000,
       maximumAge: 60000
     }
   );
-}
-
-function setupOptionalLocation() {
-  const btn = document.getElementById('btn-use-location');
-  if (btn) {
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      requestCustomerLocation();
-    });
-  }
 }
 
 // WhatsApp Order Submission Handler
@@ -456,6 +477,28 @@ function handleWhatsAppOrder(e) {
     return;
   }
 
+  // Save the validated order payload
+  activeOrderPayload = {
+    name,
+    phone,
+    area,
+    address,
+    cart
+  };
+
+  // Trigger optional location popup (Order is NEVER blocked)
+  showLocationModal();
+}
+
+/**
+ * Builds and launches the existing WhatsApp order
+ * @param {{latitude: number, longitude: number}|null} coords
+ */
+function proceedWithWhatsAppOrder(coords) {
+  if (!activeOrderPayload) return;
+
+  const { name, phone, area, address, cart } = activeOrderPayload;
+
   // Generate the formatted WhatsApp Order Message
   let message = `NEW ORDER — ZENVORA SHOOP\n\n`;
   message += `Customer Name:\n${name}\n\n`;
@@ -465,8 +508,8 @@ function handleWhatsAppOrder(e) {
 
   // IF CUSTOMER ALLOWS LOCATION: Add Google Maps link
   // IF CUSTOMER DENIES OR OMITS LOCATION: Simply omit this section
-  if (customerLocationCoords && customerLocationCoords.latitude && customerLocationCoords.longitude) {
-    message += `📍 Customer Location:\nhttps://www.google.com/maps?q=${customerLocationCoords.latitude},${customerLocationCoords.longitude}\n\n`;
+  if (coords && coords.latitude && coords.longitude) {
+    message += `📍 Customer Location:\nhttps://www.google.com/maps?q=${coords.latitude},${coords.longitude}\n\n`;
   }
 
   message += `ORDER DETAILS:\n\n`;
@@ -500,14 +543,13 @@ function handleWhatsAppOrder(e) {
   // Open WhatsApp
   setTimeout(() => {
     window.location.href = whatsappUrl;
-  }, 400);
+  }, 350);
 }
 
 // Auto Initialize Badges & Cart UI on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
   renderCart();
-  setupOptionalLocation();
 
   const checkoutForm = document.getElementById('checkout-form');
   if (checkoutForm) {
