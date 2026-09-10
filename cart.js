@@ -259,6 +259,137 @@ function renderCart() {
 // Alias for renderCartPage for backwards-compatibility
 const renderCartPage = renderCart;
 
+// --- Optional Customer Location Feature ---
+let customerLocationCoords = null;
+let isFetchingLocation = false;
+
+function setLocationButtonState(state, customText) {
+  const btn = document.getElementById('btn-use-location');
+  const btnText = document.getElementById('location-btn-text');
+  if (!btn || !btnText) return;
+
+  if (state === 'loading') {
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btnText.textContent = customText || 'Getting your location...';
+  } else if (state === 'attached') {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    btn.classList.add('attached');
+    btnText.textContent = customText || '✓ Location Attached (Tap to refresh)';
+  } else {
+    btn.disabled = false;
+    btn.classList.remove('loading', 'attached');
+    btnText.textContent = customText || 'Use My Current Location';
+  }
+}
+
+function displayLocationMessage(type, messageText, allowRemove = false) {
+  const container = document.getElementById('location-status-container');
+  if (!container) return;
+
+  container.style.display = 'block';
+  if (type === 'success') {
+    container.className = 'location-status-container location-status-success';
+    container.innerHTML = `
+      <div class="location-status-inner">
+        <span class="location-status-icon">✓</span>
+        <div class="location-status-text">
+          <strong>Location Attached:</strong> ${messageText}
+          ${customerLocationCoords ? `<div class="location-coords-preview">https://www.google.com/maps?q=${customerLocationCoords.latitude},${customerLocationCoords.longitude}</div>` : ''}
+        </div>
+        ${allowRemove ? `<button type="button" class="btn-clear-location" id="btn-clear-location" title="Remove location">Remove</button>` : ''}
+      </div>
+    `;
+    const clearBtn = document.getElementById('btn-clear-location');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', clearCustomerLocation);
+    }
+  } else {
+    // Non-blocking informational note (never an error that prevents checkout)
+    container.className = 'location-status-container location-status-info';
+    container.innerHTML = `
+      <div class="location-status-inner">
+        <span class="location-status-icon">ℹ️</span>
+        <div class="location-status-text">
+          ${messageText}
+        </div>
+      </div>
+    `;
+  }
+}
+
+function clearCustomerLocation() {
+  customerLocationCoords = null;
+  setLocationButtonState('default');
+  const container = document.getElementById('location-status-container');
+  if (container) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+  }
+}
+
+function requestCustomerLocation() {
+  if (isFetchingLocation) return;
+
+  if (!navigator.geolocation) {
+    customerLocationCoords = null;
+    displayLocationMessage(
+      'info',
+      'Location is not supported by your browser. No problem! Your order will be placed using your typed delivery address.'
+    );
+    return;
+  }
+
+  isFetchingLocation = true;
+  setLocationButtonState('loading', 'Getting your location...');
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      isFetchingLocation = false;
+      customerLocationCoords = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude
+      };
+
+      setLocationButtonState('attached');
+      displayLocationMessage(
+        'success',
+        'GPS coordinates attached. Google Maps link will be included in your WhatsApp order.',
+        true
+      );
+    },
+    (error) => {
+      isFetchingLocation = false;
+      customerLocationCoords = null;
+      setLocationButtonState('default');
+
+      // Customer chose Deny, or permission timed out / was unavailable:
+      // DO NOT block the order. DO NOT show an error that prevents checkout.
+      // Simply inform them that the order will proceed with typed address.
+      displayLocationMessage(
+        'info',
+        'Location was not shared (Optional). Your order will proceed normally using your typed address.'
+      );
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 60000
+    }
+  );
+}
+
+function setupOptionalLocation() {
+  const btn = document.getElementById('btn-use-location');
+  if (btn) {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      requestCustomerLocation();
+    });
+  }
+}
+
 // WhatsApp Order Submission Handler
 function handleWhatsAppOrder(e) {
   if (e) e.preventDefault();
@@ -331,6 +462,13 @@ function handleWhatsAppOrder(e) {
   message += `Phone:\n${phone}\n\n`;
   message += `Delivery Area:\n${area}\n\n`;
   message += `Address:\n${address}\n\n`;
+
+  // IF CUSTOMER ALLOWS LOCATION: Add Google Maps link
+  // IF CUSTOMER DENIES OR OMITS LOCATION: Simply omit this section
+  if (customerLocationCoords && customerLocationCoords.latitude && customerLocationCoords.longitude) {
+    message += `📍 Customer Location:\nhttps://www.google.com/maps?q=${customerLocationCoords.latitude},${customerLocationCoords.longitude}\n\n`;
+  }
+
   message += `ORDER DETAILS:\n\n`;
 
   let total = 0;
@@ -369,6 +507,7 @@ function handleWhatsAppOrder(e) {
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
   renderCart();
+  setupOptionalLocation();
 
   const checkoutForm = document.getElementById('checkout-form');
   if (checkoutForm) {

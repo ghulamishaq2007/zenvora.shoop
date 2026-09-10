@@ -1835,6 +1835,152 @@ textarea.form-control {
   line-height: 1.5;
 }
 
+/* Optional Location Component */
+.location-group {
+  margin-top: 1.25rem;
+  margin-bottom: 1.35rem;
+  padding: 1.1rem;
+  background: #FAF9F7;
+  border: 1px solid var(--border-color, #E8E7E3);
+  border-radius: 10px;
+}
+
+.location-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.location-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary, #121212);
+}
+
+.location-badge-optional {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  background: #EAEAE6;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+}
+
+.location-subtext {
+  font-size: 0.8rem;
+  color: #6B7280;
+  line-height: 1.5;
+  margin: 0 0 0.85rem 0;
+}
+
+.btn-outline-location {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1.5px dashed #C5A869;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #121212;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.btn-outline-location:hover {
+  background: #FAF5E9;
+  border-color: #8C6D2D;
+  border-style: solid;
+  transform: translateY(-1px);
+}
+
+.btn-outline-location.loading {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.btn-outline-location.attached {
+  background: #F0FDF4;
+  border: 1.5px solid #22C55E;
+  color: #15803D;
+  border-style: solid;
+}
+
+.location-status-container {
+  margin-top: 0.75rem;
+  border-radius: 8px;
+  padding: 0.75rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.location-status-success {
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  color: #166534;
+}
+
+.location-status-info {
+  background: #F3F4F6;
+  border: 1px solid #E5E7EB;
+  color: #4B5563;
+}
+
+.location-status-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.location-status-icon {
+  font-size: 1rem;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.location-status-text {
+  flex: 1;
+}
+
+.location-coords-preview {
+  font-size: 0.74rem;
+  font-family: monospace;
+  color: #047857;
+  word-break: break-all;
+  margin-top: 0.3rem;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.btn-clear-location {
+  background: none;
+  border: none;
+  color: #6B7280;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.btn-clear-location:hover {
+  color: #DC2626;
+}
+
 /* WhatsApp Order CTA Button */
 .btn-whatsapp {
   background-color: #15803d !important;
