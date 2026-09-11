@@ -9,6 +9,11 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = 3000;
 
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Determine static root: dist in production if it exists, otherwise project root for live development
 const staticDir = (process.env.NODE_ENV === 'production' && fs.existsSync(path.join(__dirname, 'dist', 'index.html')))
   ? path.join(__dirname, 'dist')
