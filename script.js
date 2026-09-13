@@ -289,9 +289,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Close menu if window is resized above mobile breakpoint (768px)
+    // Close menu if window is resized to laptop/desktop breakpoint (1024px+)
     window.addEventListener('resize', () => {
-      if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
+      if (window.innerWidth >= 1024 && navMenu.classList.contains('active')) {
         closeMenu();
       }
     }, { passive: true });
