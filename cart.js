@@ -308,8 +308,128 @@ function renderCart() {
 const renderCartPage = renderCart;
 
 // ==========================================
-// WHATSAPP ORDER SUBMISSION HANDLER
+// PAKISTAN LOCATIONS DYNAMIC DROPDOWNS
 // ==========================================
+
+function initPakistanLocationsDropdowns() {
+  const provinceSelect = document.getElementById('customer-province');
+  const citySelect = document.getElementById('customer-city');
+  const areaSelect = document.getElementById('delivery-area');
+
+  if (!provinceSelect || !citySelect || !areaSelect) return;
+
+  const locations = (typeof window !== 'undefined' && window.PAKISTAN_LOCATIONS) ? window.PAKISTAN_LOCATIONS : {};
+
+  // Populate provinces if empty or not fully listed
+  const provinces = Object.keys(locations);
+  if (provinces.length > 0 && provinceSelect.options.length <= 1) {
+    provinceSelect.innerHTML = '<option value="" disabled selected>-- Select Province / Region --</option>';
+    provinces.forEach(prov => {
+      const opt = document.createElement('option');
+      opt.value = prov;
+      opt.textContent = prov;
+      provinceSelect.appendChild(opt);
+    });
+  }
+
+  // Handle Province Change -> Updates City Dropdown
+  provinceSelect.addEventListener('change', () => {
+    const selectedProvince = provinceSelect.value;
+    provinceSelect.classList.remove('input-error');
+    const errProv = document.getElementById('error-province');
+    if (errProv) errProv.classList.remove('show');
+
+    // Reset City Dropdown
+    citySelect.innerHTML = '';
+    citySelect.classList.remove('input-error');
+    const errCity = document.getElementById('error-city');
+    if (errCity) errCity.classList.remove('show');
+
+    // Reset Area Dropdown
+    areaSelect.innerHTML = '<option value="" disabled selected>-- Select City First --</option>';
+    areaSelect.disabled = true;
+    areaSelect.classList.remove('input-error');
+    const errArea = document.getElementById('error-area');
+    if (errArea) errArea.classList.remove('show');
+
+    if (selectedProvince && locations[selectedProvince]) {
+      const cities = Object.keys(locations[selectedProvince]).sort((a, b) => a.localeCompare(b));
+      
+      const defaultCityOpt = document.createElement('option');
+      defaultCityOpt.value = '';
+      defaultCityOpt.disabled = true;
+      defaultCityOpt.selected = true;
+      defaultCityOpt.textContent = `-- Select City in ${selectedProvince} (${cities.length} available) --`;
+      citySelect.appendChild(defaultCityOpt);
+
+      cities.forEach(cityName => {
+        const opt = document.createElement('option');
+        opt.value = cityName;
+        opt.textContent = cityName;
+        citySelect.appendChild(opt);
+      });
+
+      citySelect.disabled = false;
+    } else {
+      citySelect.innerHTML = '<option value="" disabled selected>-- Select Province First --</option>';
+      citySelect.disabled = true;
+    }
+  });
+
+  // Handle City Change -> Updates Area Dropdown
+  citySelect.addEventListener('change', () => {
+    const selectedProvince = provinceSelect.value;
+    const selectedCity = citySelect.value;
+    citySelect.classList.remove('input-error');
+    const errCity = document.getElementById('error-city');
+    if (errCity) errCity.classList.remove('show');
+
+    // Reset Area Dropdown
+    areaSelect.innerHTML = '';
+    areaSelect.classList.remove('input-error');
+    const errArea = document.getElementById('error-area');
+    if (errArea) errArea.classList.remove('show');
+
+    if (selectedProvince && selectedCity && locations[selectedProvince] && locations[selectedProvince][selectedCity]) {
+      const rawAreas = locations[selectedProvince][selectedCity];
+      const areas = Array.isArray(rawAreas) ? rawAreas : [];
+
+      const defaultAreaOpt = document.createElement('option');
+      defaultAreaOpt.value = '';
+      defaultAreaOpt.disabled = true;
+      defaultAreaOpt.selected = true;
+      defaultAreaOpt.textContent = `-- Select Area / Locality in ${selectedCity} --`;
+      areaSelect.appendChild(defaultAreaOpt);
+
+      areas.forEach(areaName => {
+        const opt = document.createElement('option');
+        opt.value = areaName;
+        opt.textContent = areaName;
+        areaSelect.appendChild(opt);
+      });
+
+      // Ensure fallback option is always present
+      if (!areas.some(a => a.toLowerCase().includes('other area'))) {
+        const otherOpt = document.createElement('option');
+        otherOpt.value = 'Other Area / Main Town';
+        otherOpt.textContent = 'Other Area / Main Town';
+        areaSelect.appendChild(otherOpt);
+      }
+
+      areaSelect.disabled = false;
+    } else {
+      areaSelect.innerHTML = '<option value="" disabled selected>-- Select City First --</option>';
+      areaSelect.disabled = true;
+    }
+  });
+
+  // Handle Area Change
+  areaSelect.addEventListener('change', () => {
+    areaSelect.classList.remove('input-error');
+    const errArea = document.getElementById('error-area');
+    if (errArea) errArea.classList.remove('show');
+  });
+}
 
 // ==========================================
 // WHATSAPP ORDER SUBMISSION HANDLER
@@ -334,6 +454,8 @@ function handleWhatsAppOrder(e) {
 
   const nameInput = document.getElementById('customer-name');
   const phoneInput = document.getElementById('customer-phone');
+  const provinceSelect = document.getElementById('customer-province');
+  const citySelect = document.getElementById('customer-city');
   const areaSelect = document.getElementById('delivery-area');
   const addressInput = document.getElementById('customer-address');
 
@@ -342,7 +464,7 @@ function handleWhatsAppOrder(e) {
 
   // Clear previous errors
   document.querySelectorAll('.form-error-msg').forEach(el => el.classList.remove('show'));
-  [nameInput, phoneInput, areaSelect, addressInput].forEach(input => {
+  [nameInput, phoneInput, provinceSelect, citySelect, areaSelect, addressInput].forEach(input => {
     if (input) input.classList.remove('input-error');
   });
 
@@ -373,7 +495,31 @@ function handleWhatsAppOrder(e) {
     hasError = true;
   }
 
-  // Validate Delivery Area
+  // Validate Province
+  const province = provinceSelect ? provinceSelect.value.trim() : '';
+  if (!province) {
+    const err = document.getElementById('error-province');
+    if (err) err.classList.add('show');
+    if (provinceSelect) {
+      provinceSelect.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = provinceSelect;
+    }
+    hasError = true;
+  }
+
+  // Validate City
+  const city = citySelect ? citySelect.value.trim() : '';
+  if (!city) {
+    const err = document.getElementById('error-city');
+    if (err) err.classList.add('show');
+    if (citySelect) {
+      citySelect.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = citySelect;
+    }
+    hasError = true;
+  }
+
+  // Validate Delivery Area / Locality
   const area = areaSelect ? areaSelect.value.trim() : '';
   if (!area) {
     const err = document.getElementById('error-area');
@@ -413,12 +559,14 @@ function handleWhatsAppOrder(e) {
 
   const formattedPhone = normalizePhoneForOrder(phone);
 
-  // Generate the formatted WhatsApp Order Message
+  // Generate the formatted WhatsApp Order Message with full Province, City, and Locality
   let message = `NEW ORDER — ZENVORA SHOOP\n\n`;
   message += `Customer Name:\n${name}\n\n`;
-  message += `Phone:\n${formattedPhone}\n\n`;
-  message += `Delivery Area / City:\n${area}\n\n`;
-  message += `Address:\n${address}\n\n`;
+  message += `WhatsApp / Mobile:\n${formattedPhone}\n\n`;
+  message += `Province / Region:\n${province}\n\n`;
+  message += `City:\n${city}\n\n`;
+  message += `Area / Locality:\n${area}\n\n`;
+  message += `Complete Address:\n${address}\n\n`;
   message += `ORDER DETAILS:\n\n`;
 
   let total = 0;
@@ -505,11 +653,13 @@ function renderWhatsAppFallbackUI(apiWhatsAppUrl, waMeUrl, total, name) {
 // Expose handleWhatsAppOrder globally for inline onclick / external calls
 window.handleWhatsAppOrder = handleWhatsAppOrder;
 window.validatePakistaniPhone = validatePakistaniPhone;
+window.initPakistanLocationsDropdowns = initPakistanLocationsDropdowns;
 
 // Auto Initialize Badges & Cart UI on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
   renderCart();
+  initPakistanLocationsDropdowns();
 
   // Attach submit to checkout form
   const checkoutForm = document.getElementById('checkout-form');
@@ -528,8 +678,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Real-time error dismissal when customer types into inputs
-  ['customer-name', 'customer-phone', 'delivery-area', 'customer-address'].forEach(id => {
+  // Real-time error dismissal when customer types or selects options
+  ['customer-name', 'customer-phone', 'customer-province', 'customer-city', 'delivery-area', 'customer-address'].forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       const clearError = () => {

@@ -1789,6 +1789,14 @@ button {
   outline: none;
 }
 
+.form-control:disabled {
+  background-color: #F2F1ED;
+  color: #8E8E88;
+  border-color: #E2E1DC;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
 textarea.form-control {
   resize: vertical;
   min-height: 95px;
