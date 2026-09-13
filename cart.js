@@ -96,11 +96,34 @@ function formatPKR(amount) {
   return 'Rs. ' + Number(amount || 0).toLocaleString('en-PK');
 }
 
-// Validate Pakistani Mobile Number (supports 03XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX)
+// Validate & normalize Pakistani Mobile Number (supports 03XXXXXXXXX, 3XXXXXXXXX, +923XXXXXXXXX, 923XXXXXXXXX, etc.)
 function validatePakistaniPhone(phone) {
-  const clean = phone.replace(/[\s\-\(\)]/g, '');
-  const pkRegex = /^(03[0-9]{9}|\+923[0-9]{9}|923[0-9]{9})$/;
-  return pkRegex.test(clean);
+  if (!phone) return false;
+  // Convert Eastern Arabic / Urdu numerals to standard digits
+  const normalized = String(phone)
+    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
+  const digitsOnly = normalized.replace(/\D/g, '');
+
+  // 10 digits starting with 3 (e.g. 3232974451)
+  if (digitsOnly.length === 10 && digitsOnly.startsWith('3')) return true;
+  // 11 digits starting with 03 (e.g. 03232974451)
+  if (digitsOnly.length === 11 && digitsOnly.startsWith('03')) return true;
+  // 12 digits starting with 923 (e.g. 923232974451)
+  if (digitsOnly.length === 12 && digitsOnly.startsWith('923')) return true;
+  // 14 digits starting with 00923 (e.g. 00923232974451)
+  if (digitsOnly.length === 14 && digitsOnly.startsWith('00923')) return true;
+  // General fallback: any phone with 10 to 14 digits
+  return digitsOnly.length >= 10 && digitsOnly.length <= 14;
+}
+
+// Format phone nicely for the WhatsApp order text
+function normalizePhoneForOrder(phone) {
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.length === 10 && digits.startsWith('3')) return '0' + digits;
+  if (digits.length === 12 && digits.startsWith('923')) return '0' + digits.slice(2);
+  if (digits.length === 14 && digits.startsWith('00923')) return '0' + digits.slice(4);
+  return phone.trim();
 }
 
 // Add to Cart
@@ -144,7 +167,24 @@ function addToCart(product, quantityToAdd = 1) {
   return true;
 }
 
-// Modify item quantity in cart
+// Directly set quantity for cart item (supports typing any quantity)
+function setCartItemQuantity(index, newQty) {
+  let cart = getCart();
+  if (index < 0 || index >= cart.length) return;
+
+  const parsedQty = parseInt(newQty, 10);
+  if (isNaN(parsedQty) || parsedQty <= 0) {
+    removeCartItem(index);
+    return;
+  }
+
+  cart[index].quantity = parsedQty;
+  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  updateCartBadges();
+  renderCart();
+}
+
+// Modify item quantity in cart (unrestricted positive quantity)
 function updateCartItemQuantity(index, delta) {
   let cart = getCart();
   if (index < 0 || index >= cart.length) return;
@@ -179,6 +219,14 @@ function removeCartItem(index) {
     showToast(`Removed "${removedName}" from cart`, 'warning');
   }
 }
+
+// Expose functions globally for inline events
+window.setCartItemQuantity = setCartItemQuantity;
+window.updateCartItemQuantity = updateCartItemQuantity;
+window.removeCartItem = removeCartItem;
+window.addToCart = addToCart;
+window.getCart = getCart;
+window.formatPKR = formatPKR;
 
 // Render Cart in cart.html
 function renderCart() {
@@ -232,7 +280,7 @@ function renderCart() {
         <div>
           <div class="quantity-picker" style="height: 36px;">
             <button type="button" class="qty-btn" style="width: 32px; height: 36px; font-size: 1rem;" onclick="updateCartItemQuantity(${index}, -1)" aria-label="Decrease quantity">−</button>
-            <input type="text" class="qty-input" style="width: 40px; height: 36px; font-size: 0.9rem;" value="${itemQty}" readonly>
+            <input type="number" min="1" class="qty-input" style="width: 48px; height: 36px; font-size: 0.9rem; text-align: center;" value="${itemQty}" onchange="setCartItemQuantity(${index}, this.value)" aria-label="Quantity">
             <button type="button" class="qty-btn" style="width: 32px; height: 36px; font-size: 1rem;" onclick="updateCartItemQuantity(${index}, 1)" aria-label="Increase quantity">+</button>
           </div>
         </div>
@@ -263,16 +311,24 @@ const renderCartPage = renderCart;
 // WHATSAPP ORDER SUBMISSION HANDLER
 // ==========================================
 
+// ==========================================
+// WHATSAPP ORDER SUBMISSION HANDLER
+// ==========================================
+
 function handleWhatsAppOrder(e) {
-  if (e) e.preventDefault();
+  if (e && typeof e.preventDefault === 'function') {
+    e.preventDefault();
+  }
 
   const cart = getCart();
-  if (cart.length === 0) {
+  if (!cart || cart.length === 0) {
     if (typeof showToast === 'function') {
       showToast('Your cart is empty! Please add products before checking out.', 'danger');
     } else {
       alert('Your cart is empty! Please add products before checking out.');
     }
+    const cartItemsEl = document.getElementById('cart-items-container') || document.body;
+    cartItemsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     return;
   }
 
@@ -282,25 +338,37 @@ function handleWhatsAppOrder(e) {
   const addressInput = document.getElementById('customer-address');
 
   let hasError = false;
+  let firstInvalidEl = null;
 
   // Clear previous errors
   document.querySelectorAll('.form-error-msg').forEach(el => el.classList.remove('show'));
+  [nameInput, phoneInput, areaSelect, addressInput].forEach(input => {
+    if (input) input.classList.remove('input-error');
+  });
 
   // Validate Name
   const name = nameInput ? nameInput.value.trim() : '';
   if (!name) {
     const err = document.getElementById('error-name');
     if (err) err.classList.add('show');
+    if (nameInput) {
+      nameInput.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = nameInput;
+    }
     hasError = true;
   }
 
-  // Validate Phone
+  // Validate Phone (lenient: accepts 10-14 digits, local or international)
   const phone = phoneInput ? phoneInput.value.trim() : '';
   if (!phone || !validatePakistaniPhone(phone)) {
     const err = document.getElementById('error-phone');
     if (err) {
-      err.textContent = phone ? 'Please enter a valid Pakistani mobile number (e.g. 03232974451)' : 'Phone number is required';
+      err.textContent = phone ? 'Please enter a valid mobile number (e.g. 03232974451)' : 'Phone number is required';
       err.classList.add('show');
+    }
+    if (phoneInput) {
+      phoneInput.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = phoneInput;
     }
     hasError = true;
   }
@@ -310,6 +378,10 @@ function handleWhatsAppOrder(e) {
   if (!area) {
     const err = document.getElementById('error-area');
     if (err) err.classList.add('show');
+    if (areaSelect) {
+      areaSelect.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = areaSelect;
+    }
     hasError = true;
   }
 
@@ -318,21 +390,34 @@ function handleWhatsAppOrder(e) {
   if (!address) {
     const err = document.getElementById('error-address');
     if (err) err.classList.add('show');
+    if (addressInput) {
+      addressInput.classList.add('input-error');
+      if (!firstInvalidEl) firstInvalidEl = addressInput;
+    }
     hasError = true;
   }
 
+  // If there are validation errors, scroll smoothly to the first invalid field on mobile
   if (hasError) {
+    if (firstInvalidEl) {
+      try {
+        firstInvalidEl.focus();
+        firstInvalidEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (err) {}
+    }
     if (typeof showToast === 'function') {
-      showToast('Please fill in all required delivery fields correctly.', 'danger');
+      showToast('Please fill in the highlighted delivery details to place your order.', 'danger');
     }
     return;
   }
 
+  const formattedPhone = normalizePhoneForOrder(phone);
+
   // Generate the formatted WhatsApp Order Message
   let message = `NEW ORDER — ZENVORA SHOOP\n\n`;
   message += `Customer Name:\n${name}\n\n`;
-  message += `Phone:\n${phone}\n\n`;
-  message += `Delivery Area:\n${area}\n\n`;
+  message += `Phone:\n${formattedPhone}\n\n`;
+  message += `Delivery Area / City:\n${area}\n\n`;
   message += `Address:\n${address}\n\n`;
   message += `ORDER DETAILS:\n\n`;
 
@@ -352,30 +437,110 @@ function handleWhatsAppOrder(e) {
   });
 
   message += `TOTAL:\n${formatPKR(total)}\n\n`;
+  message += `Payment: Cash on Delivery (COD)\n\n`;
   message += `Please confirm my order.`;
 
-  // Encode message for WhatsApp URL
+  // Encode message for WhatsApp URLs
   const encodedMessage = encodeURIComponent(message);
-  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+  const apiWhatsAppUrl = `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodedMessage}`;
+  const waMeUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 
   if (typeof showToast === 'function') {
-    showToast('Redirecting to WhatsApp to complete your order...', 'success');
+    showToast('Connecting to WhatsApp to send your order...', 'success');
   }
 
-  // Open WhatsApp
-  setTimeout(() => {
-    window.location.href = whatsappUrl;
-  }, 350);
+  // Display persistent on-screen action fallback for mobile Chrome / Safari in case popup is intercepted
+  renderWhatsAppFallbackUI(apiWhatsAppUrl, waMeUrl, total, name);
+
+  // Synchronous direct redirect to preserve user gesture activation on mobile
+  try {
+    window.location.href = apiWhatsAppUrl;
+  } catch (err) {
+    try {
+      window.location.assign(waMeUrl);
+    } catch (e2) {
+      console.error('Direct WhatsApp redirect error:', e2);
+    }
+  }
 }
+
+// On-page action fallback UI displayed when order is dispatched
+function renderWhatsAppFallbackUI(apiWhatsAppUrl, waMeUrl, total, name) {
+  const submitBtn = document.getElementById('btn-place-whatsapp-order');
+  let fallbackBox = document.getElementById('whatsapp-order-fallback-card');
+
+  if (!fallbackBox) {
+    fallbackBox = document.createElement('div');
+    fallbackBox.id = 'whatsapp-order-fallback-card';
+    fallbackBox.className = 'whatsapp-order-card';
+    if (submitBtn && submitBtn.parentNode) {
+      submitBtn.parentNode.insertBefore(fallbackBox, submitBtn.nextSibling);
+    }
+  }
+
+  fallbackBox.innerHTML = `
+    <div style="background: #F0FDF4; border: 1.5px solid #22C55E; border-radius: 12px; padding: 1.25rem; margin-top: 1rem; text-align: center;">
+      <div style="font-size: 1.75rem; margin-bottom: 0.35rem;">✓</div>
+      <h4 style="font-size: 1.15rem; font-weight: 700; color: #15803D; margin-bottom: 0.35rem; font-family: sans-serif;">
+        Order Details Ready!
+      </h4>
+      <p style="font-size: 0.88rem; color: #374151; margin-bottom: 0.95rem; line-height: 1.45;">
+        Thank you, <strong>${name || 'Valued Customer'}</strong>. Tap the button below to send your order via WhatsApp:
+      </p>
+      <a href="${apiWhatsAppUrl}" class="btn btn-whatsapp btn-block" style="text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 1rem; font-size: 1.05rem; font-weight: 700;">
+        <span>💬 Send Order on WhatsApp Now</span>
+      </a>
+      <div style="margin-top: 0.65rem;">
+        <a href="${waMeUrl}" style="color: #166534; font-size: 0.8rem; text-decoration: underline;">
+          Or tap here if WhatsApp does not open (wa.me)
+        </a>
+      </div>
+    </div>
+  `;
+
+  // Scroll to the card so user clearly sees the action button on mobile
+  fallbackBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Expose handleWhatsAppOrder globally for inline onclick / external calls
+window.handleWhatsAppOrder = handleWhatsAppOrder;
+window.validatePakistaniPhone = validatePakistaniPhone;
 
 // Auto Initialize Badges & Cart UI on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
   updateCartBadges();
   renderCart();
 
+  // Attach submit to checkout form
   const checkoutForm = document.getElementById('checkout-form');
-  if (checkoutForm) {
+  if (checkoutForm && !checkoutForm.dataset.orderBound) {
+    checkoutForm.dataset.orderBound = 'true';
     checkoutForm.addEventListener('submit', handleWhatsAppOrder);
   }
+
+  // Also attach direct click to the place order button for touch reliability
+  const placeOrderBtn = document.getElementById('btn-place-whatsapp-order');
+  if (placeOrderBtn && !placeOrderBtn.dataset.orderBound) {
+    placeOrderBtn.dataset.orderBound = 'true';
+    placeOrderBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      handleWhatsAppOrder(e);
+    });
+  }
+
+  // Real-time error dismissal when customer types into inputs
+  ['customer-name', 'customer-phone', 'delivery-area', 'customer-address'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      const clearError = () => {
+        el.classList.remove('input-error');
+        const errKey = id.replace('customer-', '').replace('delivery-', '');
+        const errDiv = document.getElementById(`error-${errKey}`);
+        if (errDiv) errDiv.classList.remove('show');
+      };
+      el.addEventListener('input', clearError);
+      el.addEventListener('change', clearError);
+    }
+  });
 });
 

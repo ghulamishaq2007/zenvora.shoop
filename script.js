@@ -4,6 +4,55 @@
    ========================================================================== */
 
 /* ==========================================================================
+   PERMANENT STOCK SYSTEM REMOVAL & DEFENSIVE GUARDS
+   - Completely removes all Out of Stock checks, validations, and messages.
+   - All products are unconditionally available with unrestricted quantities.
+   - Intercepts and suppresses any legacy or external out-of-stock messages.
+   ========================================================================== */
+(function initializeStockRemovalGuards() {
+  // 1. Purge any legacy stock keys or cache flags from localStorage/sessionStorage
+  try {
+    const removeKeys = (storage) => {
+      if (!storage) return;
+      const toDelete = [];
+      for (let i = 0; i < storage.length; i++) {
+        const key = storage.key(i);
+        if (key && /stock|inventory|outofstock/i.test(key)) {
+          toDelete.push(key);
+        }
+      }
+      toDelete.forEach(k => storage.removeItem(k));
+    };
+    removeKeys(window.localStorage);
+    removeKeys(window.sessionStorage);
+  } catch (e) {}
+
+  // 2. Intercept and suppress window.alert if any legacy script attempts to show out-of-stock
+  if (typeof window !== 'undefined' && typeof window.alert === 'function') {
+    const nativeAlert = window.alert;
+    window.alert = function (message) {
+      if (typeof message === 'string' && /out of stock|outofstock|stock limit|sorry/i.test(message)) {
+        console.warn('Suppressed out-of-stock alert:', message);
+        return;
+      }
+      return nativeAlert.apply(this, arguments);
+    };
+  }
+
+  // 3. Proactively clean up any legacy Service Worker registrations or caches
+  if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      registrations.forEach(reg => reg.unregister().catch(() => {}));
+    }).catch(() => {});
+  }
+  if (typeof window !== 'undefined' && 'caches' in window) {
+    caches.keys().then(keys => {
+      keys.forEach(key => caches.delete(key).catch(() => {}));
+    }).catch(() => {});
+  }
+})();
+
+/* ==========================================================================
    FEATURE 1: SOCIAL PROOF NOTIFICATIONS (EDITABLE DEMO DATA)
    Instructions: You can freely add, edit, or remove items in this array.
    Notifications rotate every 6-8 seconds automatically on the homepage.
@@ -126,6 +175,11 @@ const customerReviews = [
 
 // --- Global Toast Notification Helper ---
 function showToast(message, type = 'success') {
+  // Never display any out-of-stock messages or stock-related alerts
+  if (typeof message === 'string' && /out of stock|outofstock|stock/i.test(message)) {
+    return;
+  }
+
   let container = document.getElementById('toast-container');
   if (!container) {
     container = document.createElement('div');
@@ -383,6 +437,9 @@ function initCategoryFilter() {
 function initQuickAddButtons() {
   const quickAddButtons = document.querySelectorAll('.btn-quick-add');
   quickAddButtons.forEach(btn => {
+    if (btn.dataset.quickAddBound) return;
+    btn.dataset.quickAddBound = 'true';
+
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
@@ -556,24 +613,54 @@ function initProductDetailPage(config) {
     });
     if (selectedColorLabel) selectedColorLabel.textContent = selectedColor;
   }
-  // 6. Quantity Handler
+  // 6. Quantity Handler (Supports any quantity without stock limitation or maximum restrictions)
   if (qtyMinus && qtyPlus && qtyInput) {
+    qtyInput.removeAttribute('readonly');
+    qtyInput.setAttribute('type', 'number');
+    qtyInput.setAttribute('min', '1');
+    qtyInput.removeAttribute('max');
+
+    const syncQtyFromInput = () => {
+      let val = parseInt(qtyInput.value, 10);
+      if (!isNaN(val) && val >= 1) {
+        selectedQty = val;
+      }
+    };
+
     qtyMinus.addEventListener('click', () => {
-      if (selectedQty > 1) {
-        selectedQty--;
+      let currentVal = parseInt(qtyInput.value, 10) || selectedQty || 1;
+      if (currentVal > 1) {
+        selectedQty = currentVal - 1;
         qtyInput.value = selectedQty;
       }
     });
 
     qtyPlus.addEventListener('click', () => {
-      selectedQty++;
+      let currentVal = parseInt(qtyInput.value, 10) || selectedQty || 1;
+      selectedQty = currentVal + 1;
       qtyInput.value = selectedQty;
+    });
+
+    qtyInput.addEventListener('input', syncQtyFromInput);
+    qtyInput.addEventListener('change', () => {
+      syncQtyFromInput();
+      let val = parseInt(qtyInput.value, 10);
+      if (isNaN(val) || val < 1) {
+        selectedQty = 1;
+        qtyInput.value = '1';
+      }
     });
   }
 
-  // 7. Add to Cart Handler
-  if (addToCartBtn) {
+  // 7. Add to Cart Handler (Zero stock limitations)
+  if (addToCartBtn && !addToCartBtn.dataset.bound) {
+    addToCartBtn.dataset.bound = 'true';
     addToCartBtn.addEventListener('click', () => {
+      // Ensure latest quantity is read from input if customer typed directly
+      if (qtyInput) {
+        let typedVal = parseInt(qtyInput.value, 10);
+        if (!isNaN(typedVal) && typedVal >= 1) selectedQty = typedVal;
+      }
 
       const productPayload = {
         id,
@@ -590,14 +677,20 @@ function initProductDetailPage(config) {
     });
   }
 
-  // 8. Buy Now Handler (save to localStorage, then open cart.html)
-  if (buyNowBtn) {
+  // 8. Buy Now Handler (Zero stock limitations; saves to localStorage and redirects to cart.html)
+  if (buyNowBtn && !buyNowBtn.dataset.bound) {
+    buyNowBtn.dataset.bound = 'true';
     buyNowBtn.addEventListener('click', () => {
-
       if (typeof addToCart !== 'function') {
         showToast('Cart system could not be loaded. Please refresh the page.', 'danger');
         console.error('addToCart() is not available. Make sure cart.js is loaded before script.js.');
         return;
+      }
+
+      // Ensure latest quantity is read from input if customer typed directly
+      if (qtyInput) {
+        let typedVal = parseInt(qtyInput.value, 10);
+        if (!isNaN(typedVal) && typedVal >= 1) selectedQty = typedVal;
       }
 
       const productPayload = {
@@ -614,10 +707,7 @@ function initProductDetailPage(config) {
       const success = addToCart(productPayload, selectedQty);
 
       if (success) {
-        // Resolve the cart URL from the current page instead of relying on
-        // the browser's current relative path.
-        const cartUrl = new URL('cart.html', document.baseURI).href;
-        window.location.assign(cartUrl);
+        window.location.href = 'cart.html';
       }
     });
   }

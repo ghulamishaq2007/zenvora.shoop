@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=20260903b">
+  <link rel="stylesheet" href="style.css?v=20260913_nostock">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <!-- ZENVORA SEO START -->
@@ -283,7 +283,7 @@
             </div>
 
             <div class="cart-items-list" id="cart-items-container">
-              <!-- Dynamically rendered by js/cart.js -->
+              <!-- Dynamically rendered by cart.js -->
             </div>
           </div>
 
@@ -322,7 +322,7 @@
 
             <div class="payment-badge-info">
               <span>ℹ️</span>
-              <span><strong>Payment Method:</strong> Cash on Delivery (COD) across Karachi. Pay after receiving your parcel.</span>
+              <span><strong>Payment Method:</strong> Cash on Delivery (COD) across Pakistan. Pay safely after receiving your parcel.</span>
             </div>
 
             <!-- Customer Checkout Form -->
@@ -346,36 +346,50 @@
                 <div class="form-error-msg" id="error-phone">Please enter a valid Pakistani mobile number.</div>
               </div>
 
-              <!-- Karachi Delivery Area Dropdown -->
+              <!-- Delivery Area / City Dropdown -->
               <div class="form-group">
                 <label for="delivery-area" class="form-label">
-                  Delivery Area (Karachi Only) <span class="required">*</span>
+                  Delivery Area / City <span class="required">*</span>
                 </label>
                 <select id="delivery-area" class="form-control" required>
-                  <option value="" disabled selected>-- Select Karachi Area --</option>
-                  <option value="Bahadurabad">Bahadurabad</option>
-                  <option value="Clifton">Clifton</option>
-                  <option value="DHA">DHA (Defence)</option>
-                  <option value="Federal B Area">Federal B Area</option>
-                  <option value="Gulistan-e-Johar">Gulistan-e-Johar</option>
-                  <option value="Gulistan-e-Maymar">Gulistan-e-Maymar</option>
-                  <option value="Gulshan-e-Iqbal">Gulshan-e-Iqbal</option>
-                  <option value="Korangi">Korangi</option>
-                  <option value="Landhi">Landhi</option>
-                  <option value="Liaquatabad">Liaquatabad</option>
-                  <option value="Malir">Malir</option>
-                  <option value="Manzoor Colony">Manzoor Colony</option>
-                  <option value="Model Colony">Model Colony</option>
-                  <option value="Nazimabad">Nazimabad</option>
-                  <option value="New Karachi">New Karachi</option>
-                  <option value="North Nazimabad">North Nazimabad</option>
-                  <option value="PECHS">PECHS</option>
-                  <option value="Qaidabad">Qaidabad</option>
-                  <option value="Saddar">Saddar</option>
-                  <option value="Shah Faisal Colony">Shah Faisal Colony</option>
-                  <option value="Other Karachi Area">Other Karachi Area</option>
+                  <option value="" disabled selected>-- Select Your Delivery Area / City --</option>
+                  <optgroup label="Karachi Areas">
+                    <option value="Bahadurabad">Bahadurabad</option>
+                    <option value="Clifton">Clifton</option>
+                    <option value="DHA">DHA (Defence)</option>
+                    <option value="Federal B Area">Federal B Area</option>
+                    <option value="Gulistan-e-Johar">Gulistan-e-Johar</option>
+                    <option value="Gulistan-e-Maymar">Gulistan-e-Maymar</option>
+                    <option value="Gulshan-e-Iqbal">Gulshan-e-Iqbal</option>
+                    <option value="Korangi">Korangi</option>
+                    <option value="Landhi">Landhi</option>
+                    <option value="Liaquatabad">Liaquatabad</option>
+                    <option value="Malir">Malir</option>
+                    <option value="Manzoor Colony">Manzoor Colony</option>
+                    <option value="Model Colony">Model Colony</option>
+                    <option value="Nazimabad">Nazimabad</option>
+                    <option value="New Karachi">New Karachi</option>
+                    <option value="North Nazimabad">North Nazimabad</option>
+                    <option value="PECHS">PECHS</option>
+                    <option value="Qaidabad">Qaidabad</option>
+                    <option value="Saddar">Saddar</option>
+                    <option value="Shah Faisal Colony">Shah Faisal Colony</option>
+                    <option value="Other Karachi Area">Other Karachi Area</option>
+                  </optgroup>
+                  <optgroup label="Nationwide Delivery (Other Cities)">
+                    <option value="Lahore">Lahore</option>
+                    <option value="Islamabad / Rawalpindi">Islamabad / Rawalpindi</option>
+                    <option value="Faisalabad">Faisalabad</option>
+                    <option value="Multan">Multan</option>
+                    <option value="Peshawar">Peshawar</option>
+                    <option value="Quetta">Quetta</option>
+                    <option value="Hyderabad">Hyderabad</option>
+                    <option value="Sialkot">Sialkot</option>
+                    <option value="Gujranwala">Gujranwala</option>
+                    <option value="Other City (Pakistan Nationwide)">Other City (Anywhere in Pakistan)</option>
+                  </optgroup>
                 </select>
-                <div class="form-error-msg" id="error-area">Please select your Karachi delivery area.</div>
+                <div class="form-error-msg" id="error-area">Please select your delivery area or city.</div>
               </div>
 
               <!-- Complete Delivery Address -->
@@ -388,7 +402,7 @@
               </div>
 
               <!-- Place Order Button -->
-              <button type="submit" id="btn-place-whatsapp-order" class="btn btn-whatsapp btn-block" style="padding: 1.1rem; font-size: 1.05rem; font-weight: 700; margin-top: 1rem;">
+              <button type="submit" id="btn-place-whatsapp-order" class="btn btn-whatsapp btn-block" onclick="handleWhatsAppOrder(event)" style="padding: 1.1rem; font-size: 1.05rem; font-weight: 700; margin-top: 1rem;">
                 <span>💬 Place Order on WhatsApp</span>
               </button>
               <p style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem;">
@@ -465,8 +479,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="cart.js?v=20260826"></script>
-  <script src="script.js?v=20260826"></script>
-  <script src="app-install-v2.js?v=20260903b"></script>
+  <script src="cart.js?v=20260913_nostock"></script>
+  <script src="script.js?v=20260913_nostock"></script>
+  <script src="app-install-v2.js?v=20260913_nostock"></script>
 </body>
 </html>

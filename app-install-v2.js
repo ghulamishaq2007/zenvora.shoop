@@ -81,24 +81,31 @@
     });
   }
 
-  function registerSW() {
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function (error) {
-        console.warn('ZENVORA PWA service worker registration failed:', error);
-      });
+  // Proactively unregister any active service worker and purge cached files
+  function cleanupServiceWorkerAndCaches() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister().catch(function () {});
+        }
+      }).catch(function () {});
+    }
+    if ('caches' in window) {
+      caches.keys().then(function (names) {
+        for (var i = 0; i < names.length; i++) {
+          caches.delete(names[i]).catch(function () {});
+        }
+      }).catch(function () {});
     }
   }
 
+  // Run cleanup immediately
+  cleanupServiceWorkerAndCaches();
+
   document.addEventListener('DOMContentLoaded', function () {
-    registerSW();
+    cleanupServiceWorkerAndCaches();
 
-    document.querySelectorAll('#download-app-btn, .download-app-link').forEach(function (button) {
-      button.addEventListener('click', function(e) {
-        e.preventDefault();
-        showPrompt();
-      });
-    });
-
+    // Single delegated click listener: ONLY show prompt when customer explicitly clicks Download App
     document.addEventListener('click', function (e) {
       var btn = e.target && e.target.closest ? e.target.closest('#download-app-btn, .download-app-link') : null;
       if (btn) {
@@ -107,10 +114,6 @@
       }
     });
 
-    if (!isStandalone()) {
-      var dismissed = null;
-      try { dismissed = localStorage.getItem(DISMISS_KEY); } catch (e) {}
-      if (!dismissed) window.setTimeout(showPrompt, 700);
-    }
+    // NOTE: Automatic modal popup is disabled to prevent blocking mobile customers from ordering or adding to cart
   });
 })();
